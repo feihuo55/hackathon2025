@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>托管银行AI自动化平台 - 高层设计文档 (HLD)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #1a202c;
+            background: #f7fafc;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+        }
+        header {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            padding: 48px 32px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5em;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+        .content {
+            padding: 32px;
+        }
+        section {
+            margin-bottom: 48px;
+        }
+        h2 {
+            color: #1e40af;
+            font-size: 1.75em;
+            font-weight: 600;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e5e7eb;
+            letter-spacing: -0.3px;
+        }
+        h3 {
+            color: #2563eb;
+            font-size: 1.25em;
+            font-weight: 600;
+            margin: 20px 0 12px 0;
+        }
+        h4 {
+            color: #1e40af;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        p {
+            color: #4b5563;
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 16px 0;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box h4 {
+            color: #1e40af;
+            margin-bottom: 8px;
+        }
+        .info-box p,
+        .info-box ul {
+            color: #1e40af;
+            font-size: 0.95em;
+        }
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box h4 {
+            color: #92400e;
+            margin-bottom: 8px;
+        }
+        .success-box {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success-box h4 {
+            color: #065f46;
+            margin-bottom: 8px;
+        }
+        ul,
+        ol {
+            margin-left: 24px;
+            margin-bottom: 12px;
+        }
+        li {
+            color: #4b5563;
+            margin-bottom: 6px;
+        }
+        .diagram {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        .diagram pre {
+            background: transparent;
+            color: #1e40af;
+            padding: 0;
+            font-size: 0.8em;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        thead {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+        }
+        th {
+            padding: 14px;
+            text-align: left;
+            font-weight: 600;
+        }
+        tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+        td {
+            padding: 14px;
+            color: #4b5563;
+        }
+        .toc {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        .toc h3 {
+            color: #1e40af;
+            margin-bottom: 16px;
+        }
+        .toc ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        .toc li {
+            padding: 6px 0;
+        }
+        .toc a {
+            color: #2563eb;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .toc a:hover {
+            color: #1e40af;
+            text-decoration: underline;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+        .card:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+        }
+        .card h4 {
+            color: #1e40af;
+            margin-bottom: 12px;
+        }
+        /* 系统架构图样式 */
+        .system-architecture {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+        .arch-layer {
+            background: white;
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .arch-layer-title {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: white;
+            padding: 0 10px;
+            color: #1e40af;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        .arch-components {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .arch-component {
+            background: #eff6ff;
+            border: 1px solid #93c5fd;
+            border-radius: 6px;
+            padding: 12px 16px;
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #1e40af;
+        }
+        /* 模块卡片样式 */
+        .module-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #86efac;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+        }
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .module-name {
+            color: #14532d;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        .module-owner {
+            background: #22c55e;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+        /* 数据流图样式 */
+        .flow-container {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        .flow-step {
+            background: white;
+            border: 2px solid #60a5fa;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 10px 0;
+            position: relative;
+            text-align: center;
+        }
+        .flow-step.user {
+            background: #dbeafe;
+            border-color: #3b82f6;
+        }
+        .flow-step.system {
+            background: #fef3c7;
+            border-color: #fbbf24;
+        }
+        .flow-step.service {
+            background: #d1fae5;
+            border-color: #10b981;
+        }
+        .flow-arrow {
+            text-align: center;
+            color: #60a5fa;
+            font-size: 20px;
+            margin: 5px 0;
+        }
+        /* 时间轴样式 */
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        .timeline-item {
+            display: flex;
+            margin-bottom: 30px;
+        }
+        .timeline-time {
+            flex: 0 0 100px;
+            text-align: right;
+            padding-right: 30px;
+            color: #6b7280;
+            font-weight: 600;
+        }
+        .timeline-content {
+            flex: 1;
+            padding-left: 30px;
+            border-left: 3px solid #e5e7eb;
+            position: relative;
+        }
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #3b82f6;
+            border: 3px solid white;
+        }
+        .timeline-tasks {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .task-block {
+            background: #eff6ff;
+            border: 1px solid #93c5fd;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 0.85em;
+            text-align: center;
+        }
+        /* 测试卡片 */
+        .test-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: all 0.2s;
+        }
+        .test-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .test-id {
+            background: #3b82f6;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .test-owner {
+            color: #6b7280;
+            font-size: 0.9em;
+        }
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            h2 {
+                font-size: 1.4em;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .arch-components {
+                flex-direction: column;
+            }
+            .timeline-tasks {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏦 托管银行AI自动化平台</h1>
+            <p class="subtitle">高层设计文档 (HLD) - 48小时开发冲刺计划</p>
+        </header>
+        <div class="content">
+            <!-- 系统概览 -->
+            <section id="overview">
+                <h2>1. 系统概览</h2>
+                <div class="info-box">
+                    <h4>📋 项目信息</h4>
+                    <ul>
+                        <li><strong>项目名称:</strong> Custody Bank AI Process Automation Platform</li>
+                        <li><strong>开发周期:</strong> 48小时</li>
+                        <li><strong>团队规模:</strong> 4人</li>
+                        <li><strong>LLM模型:</strong> Claude 3.5 Sonnet (AWS Bedrock)</li>
+                        <li><strong>核心技术:</strong> Chainlit + CrewAI + LlamaIndex + Chroma</li>
+                    </ul>
+                </div>
+                <h3>1.1 系统架构</h3>
+                <div class="system-architecture">
+                    <div class="arch-layer">
+                        <span class="arch-layer-title">🖥 展示层 (Presentation Layer)</span>
+                        <div class="arch-components">
+                            <div class="arch-component">Chainlit Web界面</div>
+                            <div class="arch-component">对话管理</div>
+                            <div class="arch-component">SIPOC可视化</div>
+                            <div class="arch-component">状态监控</div>
+                        </div>
+                    </div>
+                    <div class="arch-layer">
+                        <span class="arch-layer-title">🤖 应用层 (Application Layer)</span>
+                        <div class="arch-components">
+                            <div class="arch-component">意图分析智能体</div>
+                            <div class="arch-component">流程设计智能体</div>
+                            <div class="arch-component">服务构建智能体</div>
+                            <div class="arch-component">执行智能体</div>
+                        </div>
+                    </div>
+                    <div class="arch-layer">
+                        <span class="arch-layer-title">⚙️ 服务层 (Service Layer)</span>
+                        <div class="arch-components">
+                            <div class="arch-component">RAG检索服务</div>
+                            <div class="arch-component">记忆管理系统</div>
+                            <div class="arch-component">SIPOC生成器</div>
+                            <div class="arch-component">Bedrock连接器</div>
+                        </div>
+                    </div>
+                    <div class="arch-layer">
+                        <span class="arch-layer-title">💾 数据层 (Data Layer)</span>
+                        <div class="arch-components">
+                            <div class="arch-component">Chroma向量库</div>
+                            <div class="arch-component">Mock服务注册表</div>
+                            <div class="arch-component">配置存储</div>
+                            <div class="arch-component">会话缓存</div>
+                        </div>
+                    </div>
+                </div>
+                <h3>1.2 核心业务场景</h3>
+                <div class="grid">
+                    <div class="card">
+                        <h4>📊 场景一：基金净值查询</h4>
+                        <p><strong>用户输入：</strong>"查询富国天惠基金今天的净值"</p>
+                        <ul>
+                            <li>自动识别基金代码 (161005)</li>
+                            <li>调用getFundNAV服务</li>
+                            <li>返回净值、涨跌幅等数据</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>💰 场景二：基金分红处理</h4>
+                        <p><strong>用户输入：</strong>"处理本周所有基金的分红派息"</p>
+                        <ul>
+                            <li>启动需求收集对话</li>
+                            <li>生成SIPOC流程文档</li>
+                            <li>AI自动创建处理服务</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            <!-- 模块设计 -->
+            <section id="modules">
+                <h2>2. 模块设计</h2>
+                <div class="module-card">
+                    <div class="module-header">
+                        <div class="module-name">🎨 UI Module</div>
+                        <div class="module-owner">开发者A</div>
+                    </div>
+                    <p><strong>核心职责：</strong>用户界面开发、对话交互、状态展示、SIPOC可视化</p>
+                    <div style="margin-top: 15px;">
+                        <h4>文件结构：</h4>
+                        <pre>
+ui_module/
+├── app.py                 # Chainlit主应用
+├── config.py             # UI配置
+├── templates/
+│   ├── chat_interface.py # 对话界面
+│   ├── sipoc_viewer.py   # SIPOC展示
+│   └── status_panel.py   # 状态面板
+└── utils/
+    ├── message_handler.py # 消息处理
+    └── session_manager.py # 会话管理</pre>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <h4>关键功能：</h4>
+                        <ul>
+                            <li>实时对话界面与流式输出</li>
+                            <li>SIPOC文档的可视化展示</li>
+                            <li>Human-in-the-loop确认对话框</li>
+                            <li>执行状态的实时更新</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="module-card">
+                    <div class="module-header">
+                        <div class="module-name">🤖 Agent Module</div>
+                        <div class="module-owner">开发者B</div>
+                    </div>
+                    <p><strong>核心职责：</strong>CrewAI智能体开发、Bedrock集成、意图识别、流程协调</p>
+                    <div style="margin-top: 15px;">
+                        <h4>文件结构：</h4>
+                        <pre>
+agent_module/
+├── agents/
+│   ├── intent_agent.py      # 意图分析
+│   ├── process_designer.py  # 流程设计
+│   ├── service_builder.py   # 服务构建
+│   └── executor_agent.py    # 执行智能体
+├── crews/
+│   ├── existing_service_crew.py  # Flow 1
+│   └── new_service_crew.py       # Flow 2
+├── bedrock_client.py        # Bedrock连接
+└── prompts/
+    └── agent_prompts.yaml    # 提示词模板</pre>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <h4>关键功能：</h4>
+                        <ul>
+                            <li>AWS Bedrock Claude 3.5集成</li>
+                            <li>多智能体协作流程编排</li>
+                            <li>Group Chat需求收集</li>
+                            <li>智能意图识别与路由</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="module-card">
+                    <div class="module-header">
+                        <div class="module-name">📚 RAG Module</div>
+                        <div class="module-owner">开发者C</div>
+                    </div>
+                    <p><strong>核心职责：</strong>知识检索、向量存储、记忆系统、服务匹配</p>
+                    <div style="margin-top: 15px;">
+                        <h4>文件结构：</h4>
+                        <pre>
+rag_module/
+├── indexing/
+│   ├── document_loader.py   # 文档加载
+│   ├── index_builder.py     # 索引构建
+│   └── embeddings.py        # 向量化
+├── retrieval/
+│   ├── service_matcher.py   # 服务匹配
+│   └── knowledge_search.py  # 知识检索
+├── memory/
+│   ├── episodic_memory.py   # 事件记忆
+│   ├── semantic_memory.py   # 语义记忆
+│   ├── procedural_memory.py # 程序记忆
+│   └── summary_memory.py    # 摘要记忆
+└── chroma_client.py         # Chroma连接</pre>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <h4>关键功能：</h4>
+                        <ul>
+                            <li>Chroma向量数据库管理</li>
+                            <li>四层记忆系统实现</li>
+                            <li>服务注册与智能检索</li>
+                            <li>知识库的动态更新</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="module-card">
+                    <div class="module-header">
+                        <div class="module-name">⚙️ Service Module</div>
+                        <div class="module-owner">开发者D</div>
+                    </div>
+                    <p><strong>核心职责：</strong>Mock服务实现、SIPOC生成、流程可视化、动态服务创建</p>
+                    <div style="margin-top: 15px;">
+                        <h4>文件结构：</h4>
+                        <pre>
+service_module/
+├── mock_services/
+│   ├── fund_services.py     # 基金相关服务
+│   ├── service_registry.py  # 服务注册表
+│   └── service_generator.py # 动态服务生成
+├── sipoc/
+│   ├── sipoc_generator.py   # SIPOC生成
+│   ├── process_visualizer.py # 流程可视化
+│   └── templates/           # SIPOC模板
+└── utils/
+    ├── data_generator.py    # Mock数据生成
+    └── validation.py        # 参数验证</pre>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <h4>关键功能：</h4>
+                        <ul>
+                            <li>基金净值查询服务实现</li>
+                            <li>SIPOC文档自动生成</li>
+                            <li>流程图可视化(Graphviz)</li>
+                            <li>AI驱动的服务代码生成</li>
+                        </ul>
+                    </div>
+                </div>
+                <h3>2.2 模块依赖关系</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>模块</th>
+                                <th>负责人</th>
+                                <th>依赖项</th>
+                                <th>输出接口</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>UI Module</strong></td>
+                                <td>开发者A</td>
+                                <td>Agent Module的API接口</td>
+                                <td>用户交互界面、消息处理器</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Agent Module</strong></td>
+                                <td>开发者B</td>
+                                <td>Bedrock API、RAG检索接口</td>
+                                <td>智能体服务、流程协调API</td>
+                            </tr>
+                            <tr>
+                                <td><strong>RAG Module</strong></td>
+                                <td>开发者C</td>
+                                <td>Chroma DB、LlamaIndex</td>
+                                <td>检索服务、记忆系统API</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Service Module</strong></td>
+                                <td>开发者D</td>
+                                <td>SIPOC需求规范</td>
+                                <td>Mock服务、可视化组件</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <!-- 数据流设计 -->
+            <section id="dataflow">
+                <h2>3. 数据流设计</h2>
+                <h3>3.1 Flow 1: 基金净值查询流程</h3>
+                <div class="flow-container">
+                    <div class="flow-step user">
+                        <strong>👤 用户输入</strong><br>
+                        "查询富国天惠基金今天的净值"
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step system">
+                        <strong>🤖 Intent Agent</strong><br>
+                        识别意图：查询类 / 基金净值 / 富国天惠
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step system">
+                        <strong>📚 RAG Service</strong><br>
+                        搜索匹配服务 → 找到 getFundNAV
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step service">
+                        <strong>⚙️ Mock Service</strong><br>
+                        调用 getFundNAV(fundCode: "161005")
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step service">
+                        <strong>💾 Memory System</strong><br>
+                        存储交互记录到Episodic Memory
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step user">
+                        <strong>📊 结果展示</strong><br>
+                        净值: 3.2156 | 涨跌: +2.35% | 累计净值: 5.8765
+                    </div>
+                </div>
+                <h3>3.2 Flow 2: 基金分红处理流程</h3>
+                <div class="flow-container">
+                    <div class="flow-step user">
+                        <strong>👤 用户输入</strong><br>
+                        "处理本周所有基金的分红派息流程"
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step system">
+                        <strong>🤖 Intent Agent</strong><br>
+                        识别意图：自动化流程 / 基金分红 / 批量处理
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step system">
+                        <strong>📚 RAG Service</strong><br>
+                        搜索结果：未找到匹配服务
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step system">
+                        <strong>💬 Group Chat</strong><br>
+                        BA Bot + Tech Bot 多轮对话收集需求
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step service">
+                        <strong>📋 SIPOC Generator</strong><br>
+                        生成流程文档和可视化图表
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step user">
+                        <strong>✅ Human Approval</strong><br>
+                        人工确认流程正确性
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step service">
+                        <strong>🛠 Service Builder</strong><br>
+                        AI生成 fundDividendProcessing 服务
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step service">
+                        <strong>⚡ Execute Service</strong><br>
+                        调用新服务处理分红
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-step user">
+                        <strong>📊 结果展示</strong><br>
+                        处理完成：5只基金 | 分红总额：¥2,500,000
+                    </div>
+                </div>
+                <h3>3.3 数据交互序列</h3>
+                <div class="info-box">
+                    <h4>🔄 关键数据流转</h4>
+                    <ol>
+                        <li><strong>用户输入 → Chainlit：</strong>自然语言文本</li>
+                        <li><strong>Chainlit → Agent：</strong>结构化请求对象</li>
+                        <li><strong>Agent → Bedrock：</strong>LLM推理请求</li>
+                        <li><strong>Agent → RAG：</strong>服务检索查询</li>
+                        <li><strong>RAG → Chroma：</strong>向量相似度搜索</li>
+                        <li><strong>Service → Memory：</strong>执行结果存储</li>
+                        <li><strong>Agent → Chainlit：</strong>格式化响应</li>
+                        <li><strong>Chainlit → 用户：</strong>可视化展示</li>
+                    </ol>
+                </div>
+            </section>
+            <!-- 测试策略 -->
+            <section id="testing">
+                <h2>4. 测试策略</h2>
+                <h3>4.1 测试场景设计</h3>
+                <div class="test-card">
+                    <div class="test-header">
+                        <span class="test-id">T001</span>
+                        <span class="test-owner">负责人：开发者A</span>
+                    </div>
+                    <h4>基金净值查询 - 正常流程</h4>
+                    <p><strong>输入：</strong>"查询富国天惠基金今天的净值"</p>
+                    <p><strong>预期输出：</strong></p>
+                    <ul>
+                        <li>正确识别基金代码 (161005)</li>
+                        <li>返回净值数据（单位净值、累计净值、涨跌幅）</li>
+                        <li>响应时间 < 3秒</li>
+                    </ul>
+                </div>
+                <div class="test-card">
+                    <div class="test-header">
+                        <span class="test-id">T002</span>
+                        <span class="test-owner">负责人：开发者B</span>
+                    </div>
+                    <h4>无效基金查询 - 异常处理</h4>
+                    <p><strong>输入：</strong>"查询不存在的基金净值"</p>
+                    <p><strong>预期输出：</strong></p>
+                    <ul>
+                        <li>友好的错误提示信息</li>
+                        <li>建议可用的基金列表</li>
+                        <li>不会导致系统崩溃</li>
+                    </ul>
+                </div>
+                <div class="test-card">
+                    <div class="test-header">
+                        <span class="test-id">T003</span>
+                        <span class="test-owner">负责人：开发者C</span>
+                    </div>
+                    <h4>基金分红处理 - 完整流程</h4>
+                    <p><strong>输入：</strong>"处理本周的基金分红派息"</p>
+                    <p><strong>预期输出：</strong></p>
+                    <ul>
+                        <li>成功启动Group Chat对话</li>
+                        <li>生成完整的SIPOC文档</li>
+                        <li>流程图正确可视化</li>
+                        <li>新服务成功创建并执行</li>
+                    </ul>
+                </div>
+                <div class="test-card">
+                    <div class="test-header">
+                        <span class="test-id">T004</span>
+                        <span class="test-owner">负责人：开发者D</span>
+                    </div>
+                    <h4>服务生成验证 - AI能力测试</h4>
+                    <p><strong>输入：</strong>SIPOC文档</p>
+                    <p><strong>预期输出：</strong></p>
+                    <ul>
+                        <li>生成可执行的Mock服务代码</li>
+                        <li>服务能正确处理输入参数</li>
+                        <li>返回符合预期的数据格式</li>
+                    </ul>
+                </div>
+                <h3>4.2 集成测试计划</h3>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-time">Day 1<br>17:00</div>
+                        <div class="timeline-content">
+                            <h4>Checkpoint 1: Flow 1 端到端测试</h4>
+                            <div class="success-box">
+                                <h4>验收标准</h4>
+                                <ul>
+                                    <li>✅ UI能接收用户输入并展示响应</li>
+                                    <li>✅ Agent正确识别基金查询意图</li>
+                                    <li>✅ RAG成功匹配到getFundNAV服务</li>
+                                    <li>✅ Mock服务返回正确的净值数据</li>
+                                    <li>✅ 结果以卡片形式美观展示</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-time">Day 2<br>15:00</div>
+                        <div class="timeline-content">
+                            <h4>Checkpoint 2: Flow 2 端到端测试</h4>
+                            <div class="success-box">
+                                <h4>验收标准</h4>
+                                <ul>
+                                    <li>✅ Group Chat成功收集需求信息</li>
+                                    <li>✅ SIPOC文档自动生成且内容完整</li>
+                                    <li>✅ 流程图可视化清晰易懂</li>
+<li>✅ Human-in-the-loop确认机制正常</li>
+                                    <li>✅ 新服务成功生成并可调用</li>
+                                    <li>✅ 执行结果符合业务预期</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-time">Day 2<br>16:00</div>
+                        <div class="timeline-content">
+                            <h4>Checkpoint 3: 系统集成测试</h4>
+                            <div class="warning-box">
+                                <h4>重点测试项</h4>
+                                <ul>
+                                    <li>⚠️ 多用户并发访问稳定性</li>
+                                    <li>⚠️ Bedrock API调用限流处理</li>
+                                    <li>⚠️ 记忆系统的持久化验证</li>
+                                    <li>⚠️ 异常情况的优雅降级</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-time">Day 2<br>17:00</div>
+                        <div class="timeline-content">
+                            <h4>Final: 演示准备与优化</h4>
+                            <div class="info-box">
+                                <h4>演示脚本验证</h4>
+                                <ul>
+                                    <li>📝 准备3个演示场景的标准脚本</li>
+                                    <li>📝 确保所有Mock数据真实可信</li>
+                                    <li>📝 优化UI响应速度和视觉效果</li>
+                                    <li>📝 准备异常处理的演示案例</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h3>4.3 性能测试指标</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>测试项</th>
+                                <th>目标值</th>
+                                <th>测试方法</th>
+                                <th>负责人</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>响应时间</strong></td>
+                                <td>< 3秒</td>
+                                <td>从用户输入到首次响应的时间</td>
+                                <td>开发者A</td>
+                            </tr>
+                            <tr>
+                                <td><strong>意图识别准确率</strong></td>
+                                <td>> 90%</td>
+                                <td>测试20个预设场景的识别结果</td>
+                                <td>开发者B</td>
+                            </tr>
+                            <tr>
+                                <td><strong>服务匹配准确率</strong></td>
+                                <td>> 95%</td>
+                                <td>RAG检索的Top-1准确率</td>
+                                <td>开发者C</td>
+                            </tr>
+                            <tr>
+                                <td><strong>SIPOC生成完整性</strong></td>
+                                <td>100%</td>
+                                <td>检查所有必要字段是否填充</td>
+                                <td>开发者D</td>
+                            </tr>
+                            <tr>
+                                <td><strong>并发用户数</strong></td>
+                                <td>≥ 10</td>
+                                <td>同时处理多个会话的能力</td>
+                                <td>全体</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <h3>4.4 测试数据准备</h3>
+                <div class="grid">
+                    <div class="card">
+                        <h4>🎯 基金测试数据</h4>
+                        <ul>
+                            <li>富国天惠 (161005)</li>
+                            <li>易方达蓝筹 (110003)</li>
+                            <li>华夏回报 (002001)</li>
+                            <li>南方绩优 (202003)</li>
+                            <li>博时主题 (160505)</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>📊 净值数据模板</h4>
+                        <ul>
+                            <li>单位净值: 1.0000-5.0000</li>
+                            <li>累计净值: 2.0000-8.0000</li>
+                            <li>日涨跌幅: -3% ~ +3%</li>
+                            <li>更新时间: T+1日</li>
+                            <li>分红记录: 季度/年度</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>💰 分红处理数据</h4>
+                        <ul>
+                            <li>分红方式: 现金/再投资</li>
+                            <li>权益登记日: T日</li>
+                            <li>除息日: T+1日</li>
+                            <li>分红发放日: T+2日</li>
+                            <li>分红金额: 0.1-1.0元/份</li>
+                        </ul>
+                    </div>
+                </div>
+                <h3>4.5 Bug跟踪与修复</h3>
+                <div class="warning-box">
+                    <h4>🐛 已知问题与解决方案</h4>
+                    <table style="width: 100%; margin-top: 10px;">
+                        <thead>
+                            <tr style="background: #fef3c7;">
+                                <th style="padding: 8px; border: 1px solid #f59e0b;">问题</th>
+                                <th style="padding: 8px; border: 1px solid #f59e0b;">影响</th>
+                                <th style="padding: 8px; border: 1px solid #f59e0b;">解决方案</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding: 8px; border: 1px solid #f59e0b;">Bedrock响应超时</td>
+                                <td style="padding: 8px; border: 1px solid #f59e0b;">用户等待时间过长</td>
+                                <td style="padding: 8px; border: 1px solid #f59e0b;">实现重试机制和超时处理</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; border: 1px solid #f59e0b;">Chroma连接断开</td>
+                                <td style="padding: 8px; border: 1px solid #f59e0b;">RAG检索失败</td>
+                                <td style="padding: 8px; border: 1px solid #f59e0b;">添加连接池和自动重连</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; border: 1px solid #f59e0b;">SIPOC图表渲染失败</td>
+                                <td style="padding: 8px; border: 1px solid #f59e0b;">可视化展示异常</td>
+                                <td style="padding: 8px; border: 1px solid #f59e0b;">降级为文本展示</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <h3>4.6 验收标准总结</h3>
+                <div class="success-box">
+                    <h4>✅ 项目交付验收清单</h4>
+                    <div class="grid" style="margin-top: 15px;">
+                        <div style="background: white; padding: 15px; border-radius: 8px;">
+                            <h4 style="color: #065f46; margin-bottom: 10px;">功能完整性</h4>
+                            <ul style="color: #065f46; font-size: 0.9em;">
+                                <li>✓ Flow 1: 基金净值查询完整实现</li>
+                                <li>✓ Flow 2: 分红处理自动化完成</li>
+                                <li>✓ SIPOC文档生成与可视化</li>
+                                <li>✓ Human-in-the-loop确认机制</li>
+                            </ul>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 8px;">
+                            <h4 style="color: #065f46; margin-bottom: 10px;">性能指标</h4>
+                            <ul style="color: #065f46; font-size: 0.9em;">
+                                <li>✓ 响应时间 < 3秒</li>
+                                <li>✓ 意图识别准确率 > 90%</li>
+                                <li>✓ 并发支持 ≥ 10用户</li>
+                                <li>✓ 系统稳定性 > 99%</li>
+                            </ul>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 8px;">
+                            <h4 style="color: #065f46; margin-bottom: 10px;">用户体验</h4>
+                            <ul style="color: #065f46; font-size: 0.9em;">
+                                <li>✓ 界面友好直观</li>
+                                <li>✓ 错误提示清晰</li>
+                                <li>✓ 流程引导明确</li>
+                                <li>✓ 结果展示美观</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- 总结 -->
+            <section>
+                <div class="info-box" style="margin-top: 40px; text-align: center; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
+                    <h3 style="color: #1e40af; margin-bottom: 15px;">🎯 项目成功关键</h3>
+                    <p style="font-size: 1.1em; color: #1e40af;">
+                        <strong>"48小时内交付一个可演示的AI托管银行自动化平台"</strong>
+                    </p>
+                    <div style="display: flex; justify-content: space-around; margin-top: 20px; flex-wrap: wrap;">
+                        <div style="text-align: center; padding: 10px;">
+                            <div style="font-size: 2em;">🤝</div>
+                            <div style="color: #1e40af; font-weight: 600;">团队协作</div>
+                        </div>
+                        <div style="text-align: center; padding: 10px;">
+                            <div style="font-size: 2em;">⚡</div>
+                            <div style="color: #1e40af; font-weight: 600;">快速迭代</div>
+                        </div>
+                        <div style="text-align: center; padding: 10px;">
+                            <div style="font-size: 2em;">🎯</div>
+                            <div style="color: #1e40af; font-weight: 600;">聚焦核心</div>
+                        </div>
+                        <div style="text-align: center; padding: 10px;">
+                            <div style="font-size: 2em;">✨</div>
+                            <div style="color: #1e40af; font-weight: 600;">创新思维</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</body>
+</html>
