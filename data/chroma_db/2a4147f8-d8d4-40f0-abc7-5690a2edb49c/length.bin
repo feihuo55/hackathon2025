@@ -1,0 +1,1 @@
+invalid type: string "Service: 风险指标查询\nID: getRiskMetrics\nDescription: 查询基金的风险指标，包括波动率、最大回撤、夏普比率\nKeywords: 波动率, drawdown, volatility, 风险大, risk metrics, sharpe, 夏普比率, 回撤, 波动, 风险, risk, risk level, 风险指标\nParameters: fund_code", expected f64date", expected a booleanboolean fund_type", expected i64
