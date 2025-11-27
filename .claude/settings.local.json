@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git remote add:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "WebSearch",
+      "Bash(python app.py:*)",
+      "Bash(pip install:*)",
+      "Bash(chainlit run:*)",
+      "WebFetch(domain:openai.github.io)",
+      "WebFetch(domain:github.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

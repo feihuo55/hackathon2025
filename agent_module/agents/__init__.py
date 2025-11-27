@@ -1,8 +1,16 @@
-# Agents - 智能体实现
+# Agents - Agent implementations
 from .base_agent import BaseAgent
 from .intent_agent import IntentAgent
 from .executor_agent import ExecutorAgent
-from .process_designer import ProcessDesigner
-from .service_builder import ServiceBuilder
+from .executor_group import ExecutorGroup
+from .group_chat import RequirementGroupChat
+from .service_group import ServiceBuildGroup
 
-__all__ = ['BaseAgent', 'IntentAgent', 'ExecutorAgent', 'ProcessDesigner', 'ServiceBuilder']
+__all__ = [
+    'BaseAgent',
+    'IntentAgent',
+    'ExecutorAgent',
+    'ExecutorGroup',
+    'RequirementGroupChat',
+    'ServiceBuildGroup',
+]

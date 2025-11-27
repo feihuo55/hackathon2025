@@ -1,11 +1,11 @@
 """
 Custody Bank AI Automation Platform - Chainlit Main Entry
+Using MainCrew as unified orchestrator
 """
 import asyncio
 import chainlit as cl
 from config import UI_CONFIG
-from agent_module.crews import QueryCrew, CreationCrew
-from agent_module.agents import IntentAgent
+from agent_module.crews import MainCrew
 from rag_module.retrieval import ServiceMatcher
 from rag_module.memory import MemoryManager
 from service_module.mock_services import ServiceRegistry
@@ -25,7 +25,7 @@ SUGGESTIONS = {
             ("View dividend history", "Show dividend history for this fund"),
             ("Compare with other funds", "Show me all available funds"),
         ],
-        "fund_dividend": [
+        "fund_dividend_query": [
             ("Query fund NAV", "What is the current NAV?"),
             ("View other fund dividends", "Show dividend history for fund 110011"),
             ("List all funds", "Show me all available funds"),
@@ -35,10 +35,15 @@ SUGGESTIONS = {
             ("Check dividend records", "Show dividend history for China AMC Select"),
             ("Process dividends", "Process dividend distribution"),
         ],
-        "creation": [
+        "dividend_process": [
             ("View process status", "Show the process status"),
             ("Query fund information", "What is the NAV of fund 161005?"),
             ("List all funds", "Show me all available funds"),
+        ],
+        "confirming": [
+            ("Confirm execution", "confirm"),
+            ("Cancel operation", "cancel"),
+            ("Modify requirements", "Please modify the process"),
         ],
     },
     "zh": {
@@ -52,7 +57,7 @@ SUGGESTIONS = {
             ("查看分红历史", "显示该基金的分红记录"),
             ("对比其他基金", "显示所有可用的基金"),
         ],
-        "fund_dividend": [
+        "fund_dividend_query": [
             ("查询基金净值", "当前净值是多少?"),
             ("查看其他基金分红", "显示基金110011的分红历史"),
             ("列出所有基金", "显示所有可用的基金"),
@@ -62,10 +67,15 @@ SUGGESTIONS = {
             ("查看分红记录", "显示华夏优势的分红历史"),
             ("处理分红", "处理分红派息"),
         ],
-        "creation": [
+        "dividend_process": [
             ("查看流程状态", "显示流程状态"),
             ("查询基金信息", "基金161005的净值是多少?"),
             ("列出所有基金", "显示所有可用的基金"),
+        ],
+        "confirming": [
+            ("确认执行", "确认"),
+            ("取消操作", "取消"),
+            ("修改需求", "请修改流程"),
         ],
     },
 }
@@ -81,9 +91,13 @@ def get_suggestions(lang: str, context: str = "default") -> list:
 service_registry = ServiceRegistry()
 service_matcher = ServiceMatcher()
 memory_manager = MemoryManager()
-intent_agent = IntentAgent()
-query_crew = QueryCrew(service_registry, service_matcher, memory_manager)
-creation_crew = CreationCrew(service_registry, memory_manager)
+
+# Initialize MainCrew - unified orchestrator
+main_crew = MainCrew(
+    service_registry=service_registry,
+    service_matcher=service_matcher,
+    memory_manager=memory_manager,
+)
 
 
 # Loading animation frames
@@ -110,6 +124,7 @@ async def on_chat_start():
     cl.user_session.set("history", [])
     cl.user_session.set("context", {})
     cl.user_session.set("lang", "en")  # Default language
+    cl.user_session.set("session_id", str(id(cl.user_session)))  # Unique session ID
 
     # Send welcome message with AI author
     welcome_msg = cl.Message(content=get_message('welcome', 'en'), author="Custody Bank AI")
@@ -137,11 +152,25 @@ async def on_chat_start():
     ).send()
 
 
+async def animate_step(msg: cl.Message, base_content: str, step_text: str, duration: float = 0.4):
+    """Animate a step with spinner"""
+    frames = LOADING_FRAMES
+    end_time = asyncio.get_event_loop().time() + duration
+    frame_idx = 0
+
+    while asyncio.get_event_loop().time() < end_time:
+        msg.content = f"{base_content}{frames[frame_idx]} {step_text}"
+        await msg.update()
+        frame_idx = (frame_idx + 1) % len(frames)
+        await asyncio.sleep(0.1)
+
+
 @cl.on_message
 async def on_message(message: cl.Message):
     """Handle user messages"""
     user_input = message.content
     history = cl.user_session.get("history", [])
+    session_id = cl.user_session.get("session_id", "default")
 
     # Detect language from user input
     lang = detect_language(user_input)
@@ -150,62 +179,80 @@ async def on_message(message: cl.Message):
     # Add to history
     history.append({"role": "user", "content": user_input})
 
-    # Create response message with streaming (AI author)
+    # Create response message (all content in one message)
     response_msg = cl.Message(content="", author="Custody Bank AI")
     await response_msg.send()
 
-    try:
-        # Step 1: Analyzing - with animation
-        await animate_loading(response_msg, get_message('analyzing', lang), 0.5)
+    # Accumulated content for unified display
+    accumulated_content = ""
 
-        # Intent recognition
-        intent_result = await intent_agent.analyze(user_input)
-        intent_type = intent_result.get("type", "unknown")
+    # Define thinking callback
+    async def on_thinking(steps):
+        nonlocal accumulated_content
+        # Show thinking animation
+        await animate_step(response_msg, accumulated_content, "🤔 Analyzing...", 0.5)
 
-        # Step 2: Show intent detected
-        response_msg.content = f"✓ {get_message('intent_detected', lang, intent=intent_type)}"
+        # Display thinking steps
+        accumulated_content += "🤔 **Analyzing**\n"
+        for step in steps:
+            accumulated_content += f"> {step}\n"
+            response_msg.content = accumulated_content
+            await response_msg.update()
+            await asyncio.sleep(0.25)
+
+        accumulated_content += "✅ Done\n\n"
+        response_msg.content = accumulated_content
         await response_msg.update()
-        await asyncio.sleep(0.3)
 
-        # Step 3: Processing - with animation
-        await animate_loading(response_msg, get_message('processing', lang), 0.5)
+    # Define expert speak callback (subtle, in same message)
+    async def on_expert_speak(name, emoji, speech):
+        nonlocal accumulated_content
+        # Show spinner animation
+        await animate_step(response_msg, accumulated_content, f"{emoji} {name}...", 0.3)
 
-        # Route to appropriate handler based on intent
-        if intent_type == "query":
-            # Flow 1: Query existing services
-            result = await query_crew.execute(user_input, intent_result)
-        elif intent_type == "creation":
-            # Flow 2: Create new service flow
-            result = await creation_crew.execute(user_input, intent_result)
-        else:
-            result = {
-                "success": False,
-                "message": get_message('unknown_intent', lang)
-            }
+        # Add expert speech (one line)
+        accumulated_content += f"{emoji} **{name}**: {speech}\n"
+        response_msg.content = accumulated_content
+        await response_msg.update()
 
-        # Step 4: Generating response - with animation
-        await animate_loading(response_msg, get_message('generating', lang), 0.3)
+    try:
+        # Use MainCrew with callbacks
+        result = await main_crew.process(
+            user_input=user_input,
+            session_id=session_id,
+            lang=lang,
+            on_thinking=on_thinking,
+            on_expert_speak=on_expert_speak,
+        )
 
         # Store to memory system
         await memory_manager.store_interaction(user_input, result)
 
-        # Update message with final result
-        response_msg.content = result.get("message", "Done")
+        # Display final result
+        status = result.get("status")
+        if status in ["rag_not_found", "sipoc_confirming"]:
+            # Flow 2 stages: append message to accumulated content
+            accumulated_content += "\n" + result.get("message", "")
+            response_msg.content = accumulated_content
+        else:
+            # Other cases: show final result
+            response_msg.content = result.get("message", "Done")
+
         await response_msg.update()
 
-        # If SIPOC document exists, display visualization
-        if result.get("sipoc"):
-            from ui_module.sipoc_viewer import render_sipoc
-            sipoc_content = render_sipoc(result["sipoc"])
-            await cl.Message(content=sipoc_content, author="Custody Bank AI").send()
-
-        # Determine suggestion context based on query type
+        # Determine suggestion context based on result status
         suggestion_context = "default"
-        if intent_type == "query":
-            query_type = intent_result.get("query_type", "")
-            suggestion_context = query_type if query_type else "default"
-        elif intent_type == "creation":
-            suggestion_context = "creation"
+        if status in ["rag_not_found", "sipoc_confirming"]:
+            suggestion_context = "confirming"
+        elif result.get("data"):
+            # Try to determine context from the data
+            data = result.get("data", {})
+            if "nav" in str(data).lower():
+                suggestion_context = "fund_nav"
+            elif "dividend" in str(data).lower():
+                suggestion_context = "fund_dividend_query"
+            elif isinstance(data, list):
+                suggestion_context = "fund_list"
 
         # Add suggestion buttons
         suggestions = get_suggestions(lang, suggestion_context)
@@ -260,8 +307,13 @@ async def on_chat_end():
     """Cleanup on chat end"""
     # Save session memory
     history = cl.user_session.get("history", [])
+    session_id = cl.user_session.get("session_id", "default")
+
     if history:
         await memory_manager.save_session(history)
+
+    # Clear session state in MainCrew
+    main_crew.clear_session(session_id)
 
 
 if __name__ == "__main__":
