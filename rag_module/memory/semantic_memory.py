@@ -142,7 +142,7 @@ class SemanticMemory:
                             "knowledge_id": kid,
                             "content": results["documents"][0][i] if results.get("documents") else "",
                             "metadata": results["metadatas"][0][i] if results.get("metadatas") else {},
-                            "score": 1 - (results["distances"][0][i] if results.get("distances") else 0),
+                            "score": 1.0 / (1.0 + (results["distances"][0][i] if results.get("distances") else 0)),
                         })
                 return knowledge_list
             except Exception as e:
