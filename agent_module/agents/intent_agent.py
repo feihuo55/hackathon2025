@@ -73,10 +73,9 @@ class IntentAgent(BaseAgent):
             "original_input": user_input,
         }
 
-        # NAV query intent - English and Chinese keywords
-        nav_keywords_en = ["nav", "net value", "price", "value", "query fund", "check fund"]
-        nav_keywords_zh = ["净值", "查询", "多少", "价格"]
-        if any(kw in text for kw in nav_keywords_en + nav_keywords_zh):
+        # NAV query intent
+        nav_keywords = ["nav", "net value", "price", "value", "query fund", "check fund", "fund nav"]
+        if any(kw in text for kw in nav_keywords):
             result["type"] = "query"
             result["query_type"] = "fund_nav"
             result["confidence"] = 0.9
@@ -89,7 +88,7 @@ class IntentAgent(BaseAgent):
 
         # Dividend query intent
         elif any(kw in text for kw in ["dividend history", "dividend record", "dividends",
-                                        "分红记录", "历史分红", "派息记录"]):
+                                        "query dividend", "check dividend"]):
             result["type"] = "query"
             result["query_type"] = "fund_dividend"
             result["confidence"] = 0.9
@@ -99,29 +98,58 @@ class IntentAgent(BaseAgent):
                 result["entities"]["fund_code"] = fund_info["code"]
                 result["entities"]["fund_name"] = fund_info["name"]
 
+        # Fund performance query intent
+        elif any(kw in text for kw in ["performance", "return", "returns", "benchmark",
+                                        "ytd", "year-to-date", "metrics", "fund performance",
+                                        "performance metrics", "performance report"]):
+            result["type"] = "query"
+            result["query_type"] = "fund_performance"
+            result["confidence"] = 0.9
+
+            fund_info = self._extract_fund_info(user_input)
+            if fund_info:
+                result["entities"]["fund_code"] = fund_info["code"]
+                result["entities"]["fund_name"] = fund_info["name"]
+
         # Fund list query
         elif any(kw in text for kw in ["fund list", "all funds", "show funds", "list funds",
-                                        "available funds", "基金列表", "所有基金", "有哪些基金",
-                                        "显示基金"]):
+                                        "available funds"]):
             result["type"] = "query"
             result["query_type"] = "fund_list"
             result["confidence"] = 0.9
 
         # Dividend processing intent
         elif any(kw in text for kw in ["process dividend", "dividend processing", "batch dividend",
-                                        "处理分红", "分红派息", "批量分红", "分红处理"]):
+                                        "dividend distribution", "distribute dividend"]):
             result["type"] = "creation"
             result["creation_type"] = "dividend_processing"
             result["confidence"] = 0.85
 
+        # Compliance report processing intent
+        elif any(kw in text for kw in ["compliance", "compliance report", "regulatory", "regulatory report",
+                                        "monthly report", "report due", "compliance checklist"]):
+            result["type"] = "creation"
+            result["creation_type"] = "compliance_report"
+            result["confidence"] = 0.85
+
+            # Extract fund codes if present
+            fund_codes = self._extract_multiple_fund_codes(user_input)
+            if fund_codes:
+                result["entities"]["fund_codes"] = fund_codes
+
         # Create process intent
         elif any(kw in text for kw in ["create process", "new service", "automation", "workflow",
-                                        "创建流程", "新增服务", "自动化", "新业务"]):
+                                        "new process", "create workflow"]):
             result["type"] = "creation"
             result["creation_type"] = "new_process"
             result["confidence"] = 0.7
 
         return result
+
+    def _extract_multiple_fund_codes(self, text: str) -> list:
+        """Extract multiple fund codes from text"""
+        codes = re.findall(r'\b(\d{6})\b', text)
+        return [code for code in codes if code in FUND_DATA]
 
     def _extract_fund_info(self, text: str) -> Optional[dict]:
         """Extract fund info from text"""

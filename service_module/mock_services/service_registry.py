@@ -69,6 +69,28 @@ class ServiceRegistry:
             keywords=["列表", "所有基金", "基金列表"]
         )
 
+        # 基金业绩查询服务
+        self.register(
+            service_id="getFundPerformance",
+            name="基金业绩查询",
+            description="查询指定基金的业绩指标，包括收益率和基准比较",
+            handler=FundServices.get_fund_performance,
+            parameters={
+                "fund_code": {
+                    "type": "string",
+                    "required": True,
+                    "description": "基金代码"
+                }
+            },
+            returns={
+                "ytd_return": "年初至今收益率",
+                "one_year_return": "一年收益率",
+                "benchmark_comparison": "基准比较",
+                "risk_metrics": "风险指标"
+            },
+            keywords=["业绩", "收益", "表现", "performance", "return", "benchmark"]
+        )
+
         # 分红处理服务
         self.register(
             service_id="processDividend",

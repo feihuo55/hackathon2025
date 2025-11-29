@@ -134,6 +134,14 @@ class QueryCrew:
         elif query_type == "fund_list":
             return "getAllFunds", {}
 
+        elif query_type == "fund_performance":
+            fund_code = entities.get("fund_code")
+            if not fund_code:
+                fund_code = self._extract_fund_code(user_input)
+
+            if fund_code:
+                return "getFundPerformance", {"fund_code": fund_code}
+
         return None, {}
 
     def _extract_fund_code(self, text: str) -> Optional[str]:

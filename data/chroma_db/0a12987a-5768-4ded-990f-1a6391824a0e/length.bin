@@ -1,1 +1,0 @@
-{"chroma:document":"Service: 风险指标查询\nID: getRiskMetrics\nDescription: 查询基金的风险指标，包括波动率、最大回撤、夏普比率\nKeywords: 风险指标, sharpe, 夏普比率, risk metrics, risk level, risk, 波动率, drawdown, volatility, 风险, 回撤, 波动, 风险大\nParameters: fund_code","service_id":"getRiskMetrics","name":"风险指标查询","type":"servic
