@@ -4,6 +4,7 @@ Exposes the existing services as REST APIs
 Version: 2.0 - With Processing Steps Support
 """
 import asyncio
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -756,7 +757,7 @@ async def chat(request: ChatRequest):
                         },
                         "processingSteps": processing_steps,
                         "actions": [
-                            {"id": "generate", "label": "Generate Workflow", "type": "generate"}
+                            {"id": "generate", "label": "Generate Workflow", "type": "generateWorkflow"}
                         ],
                     }
                 }
@@ -1061,61 +1062,145 @@ async def execute_service(request: ExecuteRequest):
     processing_steps = []
 
     try:
-        # Simulate service execution
-        from service_module.mock_services.fund_services import FundServices
+        # Import workflow executor for step-by-step execution
+        from service_module.mock_services.workflow_executor import WorkflowExecutor
 
+        # Detect workflow type for service generation
+        title = sipoc.get("title", "").lower() if sipoc.get("title") else ""
+        process_str = str(sipoc.get("process", [])).lower()
+
+        if "dividend" in title or "dividend" in process_str:
+            workflow_type = "dividend_processing"
+            service_name = "DividendProcessingService"
+        elif "nav" in title or "nav" in process_str:
+            workflow_type = "nav_query"
+            service_name = "NAVQueryService"
+        elif "compliance" in title or "compliance" in process_str:
+            workflow_type = "compliance_report"
+            service_name = "ComplianceReportService"
+        elif "performance" in title or "performance" in process_str:
+            workflow_type = "performance_query"
+            service_name = "PerformanceQueryService"
+        else:
+            workflow_type = "generic"
+            service_name = "WorkflowService"
+
+        # Step 1: Analyze SIPOC
         processing_steps.append({
             "step": 1,
-            "title": "Validating SIPOC",
-            "thinking": "Checking SIPOC document structure and required parameters..."
+            "title": "Analyzing SIPOC Document",
+            "thinking": "Parsing SIPOC structure and identifying service requirements...",
+            "details": [
+                {"type": "module", "name": "SIPOCAnalyzer", "description": "Extracting process steps and dependencies"},
+                {"type": "rag", "name": "ServiceTemplateDB", "description": f"Matching to {service_name} template"}
+            ]
         })
 
+        # Step 2: Generate Service Class
         processing_steps.append({
             "step": 2,
-            "title": "Initializing Service",
-            "thinking": "Loading service modules and establishing data connections..."
+            "title": "Generating Service Class",
+            "thinking": f"Creating {service_name} class with workflow methods...",
+            "details": [
+                {"type": "agent", "name": "CodeGenerator", "description": "Generating service class structure"},
+                {"type": "service", "name": service_name, "description": "Implementing SIPOC process steps"}
+            ]
         })
 
-        # Execute based on SIPOC type
-        if "Dividend" in str(sipoc.get("process", [])) or "dividend" in str(sipoc.get("suppliers", [""])[0]).lower():
+        # Step 3: Configure Service Endpoints
+        processing_steps.append({
+            "step": 3,
+            "title": "Configuring Service Endpoints",
+            "thinking": "Setting up API endpoints and data connections...",
+            "details": [
+                {"type": "module", "name": "APIConfigurator", "description": "Creating REST endpoints"},
+                {"type": "memory", "name": "ServiceRegistry", "description": "Registering service in catalog"}
+            ]
+        })
+
+        # Step 4: Execute Workflow
+        processing_steps.append({
+            "step": 4,
+            "title": "Executing Workflow",
+            "thinking": "Running workflow with mock data to validate service...",
+            "details": [
+                {"type": "crew", "name": "WorkflowExecutor", "description": "Executing all process steps"},
+                {"type": "action", "name": "DataValidation", "description": "Validating input/output data"}
+            ]
+        })
+
+        # Execute workflow using the new WorkflowExecutor
+        workflow_result = await WorkflowExecutor.execute_workflow(sipoc)
+
+        if workflow_result.get("success"):
+            summary = workflow_result.get("summary", {})
+            actual_workflow_type = workflow_result.get("workflowType", workflow_type)
+
+            # Step 5: Service Generation Complete
             processing_steps.append({
-                "step": 3,
-                "title": "Executing Dividend Processing",
-                "thinking": "Running dividend calculation and distribution across fund accounts..."
+                "step": 5,
+                "title": "Service Generation Complete",
+                "thinking": f"Successfully generated {service_name} with {summary.get('total_steps', 0)} workflow steps.",
+                "details": [
+                    {"type": "result", "name": "ServiceCreated", "description": f"{service_name} is now available"},
+                    {"type": "result", "name": "EndpointReady", "description": f"POST /api/services/{workflow_type}"}
+                ]
             })
 
-            # Execute dividend processing
-            all_fund_codes = list(FUND_DATA.keys())
-            result = await FundServices.process_dividend(all_fund_codes[:3], "cash")
+            # Generate code snippet based on workflow type
+            process_steps = sipoc.get("process", [])
+            process_methods = []
+            for i, step in enumerate(process_steps[:6], 1):
+                # Clean step name for method
+                step_clean = step.replace("1. ", "").replace("2. ", "").replace("3. ", "").replace("4. ", "").replace("5. ", "").replace("6. ", "")
+                method_name = "_".join(step_clean.lower().split()[:4]).replace("-", "_")
+                process_methods.append(f"        self.{method_name}()")
 
-            if result.get("success"):
-                data = result.get("data", {})
-                processing_steps.append({
-                    "step": 4,
-                    "title": "Generating Report",
-                    "thinking": f"Processed {data.get('processed_count', 0)} funds. Total amount: ¥{data.get('total_amount', 0):,.2f}. Creating final report..."
-                })
-                message = f"""**Service created and executed successfully!**
+            code_snippet = f'''class {service_name}:
+    """
+    Auto-generated service based on SIPOC workflow
+    Workflow Type: {actual_workflow_type}
+    Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+    """
 
-Results:
-- Funds processed: {data.get('processed_count', 0)}
-- Total dividend amount: ¥{data.get('total_amount', 0):,.2f}
+    def __init__(self):
+        self.suppliers = {sipoc.get("suppliers", [])}
+        self.customers = {sipoc.get("customers", [])}
 
-Details have been recorded in the system."""
-            else:
-                message = "Service execution failed"
+    async def execute(self, input_data: dict) -> dict:
+        """Execute the complete workflow"""
+        result = {{"success": True, "steps": []}}
+
+        # Process steps from SIPOC
+{chr(10).join(process_methods)}
+
+        return result
+
+    async def validate_inputs(self, data: dict) -> bool:
+        """Validate input data against SIPOC inputs"""
+        required_inputs = {sipoc.get("inputs", [])}
+        return True
+
+    async def generate_outputs(self, result: dict) -> dict:
+        """Generate outputs as defined in SIPOC"""
+        outputs = {sipoc.get("outputs", [])}
+        return {{"outputs": outputs, "data": result}}
+
+
+# Service Registration
+service_registry.register("{workflow_type}", {service_name}())
+
+# API Endpoint
+@app.post("/api/services/{workflow_type}")
+async def execute_{workflow_type}(request: ServiceRequest):
+    service = service_registry.get("{workflow_type}")
+    return await service.execute(request.data)'''
+
+            message = f"Service **{service_name}** has been successfully generated and deployed!"
+
         else:
-            processing_steps.append({
-                "step": 3,
-                "title": "Creating Service",
-                "thinking": "Setting up service based on SIPOC configuration..."
-            })
-            processing_steps.append({
-                "step": 4,
-                "title": "Service Ready",
-                "thinking": "Service has been created and is ready for execution..."
-            })
-            message = "Service created and ready for execution"
+            message = "Workflow execution failed"
+            code_snippet = None
 
         # Clear session
         if session_id in chat_sessions:
@@ -1126,6 +1211,9 @@ Details have been recorded in the system."""
             "data": {
                 "message": message,
                 "processingSteps": processing_steps,
+                "workflowResult": workflow_result,
+                "serviceName": service_name,
+                "codeSnippet": code_snippet
             }
         }
 

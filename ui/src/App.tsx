@@ -1,7 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { EmailList } from './components/EmailList/EmailList';
+import { EmailFolder } from './components/EmailFolder/EmailFolder';
 import { AnalysisPanel } from './components/AnalysisPanel/AnalysisPanel';
+import { AuthModal } from './components/AuthModal/AuthModal';
+import { PermissionModal } from './components/PermissionModal/PermissionModal';
+
+// Types for permission modal
+interface ServicePermission {
+  id: string;
+  name: string;
+  description: string;
+}
+
+interface SharedFolder {
+  id: string;
+  name: string;
+  emailCount: number;
+}
 import {
   fetchEmails,
   analyzeEmails,
@@ -16,15 +32,44 @@ import type {
   SIPOCDocument,
   AnalysisSession,
   ProcessingStep,
+  ServiceExecutionResult,
 } from './types';
 import './styles/main.css';
 
+// Simple folder type
+interface FolderItem {
+  id: string;
+  name: string;
+  icon: 'inbox' | 'sent' | 'archive' | 'trash' | 'starred' | 'important' | 'folder';
+  count: number;
+}
+
+// Mock services based on department permissions
+const MOCK_SERVICES: ServicePermission[] = [
+  { id: 'dividend-service', name: 'Dividend Processing Service', description: 'Process fund dividend distributions' },
+  { id: 'nav-service', name: 'NAV Calculation Service', description: 'Calculate net asset values' },
+];
+
 function App() {
-  // Tab state
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(true);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [userDepartment, setUserDepartment] = useState<string | null>(null);
+  const [userServices, setUserServices] = useState<ServicePermission[]>([]);
+  const [sharedFolders, setSharedFolders] = useState<SharedFolder[]>([]);
+
+  // Tab state - now includes folder view
   const [activeTab, setActiveTab] = useState<'email' | null>(null);
+  const [emailSubTab, setEmailSubTab] = useState<'folders' | 'emails'>('folders');
+
+  // Folder state - dynamically set based on shared folders
+  const [folders, setFolders] = useState<FolderItem[]>([]);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
   // Data state
   const [emails, setEmails] = useState<Email[]>([]);
+  const [allEmails, setAllEmails] = useState<Email[]>([]); // Store all emails from API
 
   // Selection state
   const [selection, setSelection] = useState<SelectionState>({
@@ -38,16 +83,20 @@ function App() {
   const [sipocDocument, setSipocDocument] = useState<SIPOCDocument | null>(null);
   const [pendingSipoc, setPendingSipoc] = useState<SIPOCDocument | null>(null); // For Generate Workflow button
   const [workflowSipoc, setWorkflowSipoc] = useState<SIPOCDocument | null>(null); // For displaying BPM workflow
+  const [serviceExecutionResult, setServiceExecutionResult] = useState<ServiceExecutionResult | null>(null); // For displaying service execution results
+  const [pendingWorkflowResult, setPendingWorkflowResult] = useState<ServiceExecutionResult | null>(null); // Stored result waiting for user confirmation
   const [isLoading, setIsLoading] = useState(false);
 
   // Multiple analysis sessions - each request gets its own section
   const [analysisSessions, setAnalysisSessions] = useState<AnalysisSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
-  // Load initial data
+  // Load initial data after authentication
   useEffect(() => {
-    loadData();
-  }, []);
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [isAuthenticated]);
 
   // Debug: Track sipocDocument state changes
   useEffect(() => {
@@ -56,7 +105,85 @@ function App() {
 
   async function loadData() {
     const emailData = await fetchEmails();
+    setAllEmails(emailData);
+    // Set emails initially to all fetched emails
     setEmails(emailData);
+  }
+
+  // Handle login - returns department for popup, but doesn't set isAuthenticated yet
+  // AuthModal will call onClose after user acknowledges department, then we set isAuthenticated
+  async function handleLogin(username: string, password: string): Promise<{ success: boolean; department?: string; error?: string }> {
+    // Simulate authentication - in production this would call a real API
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    if (username === 'demo' && password === 'demo123') {
+      const department = 'Business01';
+      setUserDepartment(department);
+      // Don't set isAuthenticated here - wait for department popup acknowledgment
+      return { success: true, department };
+    }
+
+    return { success: false, error: 'Invalid username or password' };
+  }
+
+  // Called when user acknowledges department popup - now shows permission modal
+  function handleAuthComplete() {
+    setShowAuthModal(false);
+    // Load permissions and show permission modal
+    loadPermissions();
+    setShowPermissionModal(true);
+  }
+
+  // Load permissions based on department
+  async function loadPermissions() {
+    // In production, this would fetch from API based on department
+    // For now, mock the data
+    setUserServices(MOCK_SERVICES);
+
+    // Fetch emails to get the correct count
+    const emailData = await fetchEmails();
+    setAllEmails(emailData);
+    setEmails(emailData);
+
+    // Create shared folders with correct email counts
+    const mockSharedFolders: SharedFolder[] = [
+      { id: 'monitor', name: 'Monitor Folder', emailCount: emailData.length },
+      { id: 'dividend-requests', name: 'Dividend Requests', emailCount: 2 },
+    ];
+    setSharedFolders(mockSharedFolders);
+
+    // Update folder list with correct counts
+    const folderItems: FolderItem[] = mockSharedFolders.map(folder => ({
+      id: folder.id,
+      name: folder.name,
+      icon: folder.id === 'monitor' ? 'inbox' as const : 'folder' as const,
+      count: folder.emailCount,
+    }));
+    setFolders(folderItems);
+  }
+
+  // Called when user clicks continue on permission modal
+  function handlePermissionComplete() {
+    setShowPermissionModal(false);
+    setIsAuthenticated(true);
+    setActiveTab('email'); // Automatically switch to email tab
+  }
+
+  // Handle folder selection
+  function handleFolderSelect(folderId: string) {
+    setSelectedFolderId(folderId);
+    // For simplicity, all folders show the same emails (from API)
+    setEmails(allEmails);
+    // Clear previous selection
+    setSelection({ selectedEmails: [], selectedAttachments: [] });
+    // Switch to emails view
+    setEmailSubTab('emails');
+  }
+
+  // Handle back to folders
+  function handleBackToFolders() {
+    setEmailSubTab('folders');
+    setSelectedFolderId(null);
   }
 
   // Handle email selection
@@ -232,6 +359,8 @@ function App() {
     setSipocDocument(null);
     setPendingSipoc(null);
     setWorkflowSipoc(null);
+    setServiceExecutionResult(null);
+    setPendingWorkflowResult(null);
     setAnalysisSessions([]); // Clear all sessions for new analysis
 
     // Create new session - pass 0 since we just cleared all messages
@@ -741,6 +870,203 @@ function App() {
       } else {
         console.error('[ERROR] No SIPOC data available for generateWorkflow action from any source');
       }
+    } else if (actionType === 'generateService') {
+      // Generate and execute service from workflowSipoc
+      console.log('[DEBUG handleActionClick generateService] workflowSipoc:', workflowSipoc);
+
+      // Prevent duplicate calls while loading
+      if (isLoading) {
+        console.log('[DEBUG generateService] Already loading, ignoring duplicate call');
+        return;
+      }
+
+      if (workflowSipoc) {
+        setIsLoading(true);
+
+        // Create new session for service generation progress
+        const currentMsgCount = chatMessages.length;
+        const sessionId = createNewSession(currentMsgCount);
+        console.log('[DEBUG generateService] Created session:', sessionId, 'at message index:', currentMsgCount);
+
+        try {
+          const result = await executeService(workflowSipoc);
+          console.log('[DEBUG generateService] API result:', result);
+
+          if (result.success && result.data) {
+            console.log('[DEBUG generateService] result.data.processingSteps:', result.data.processingSteps);
+            console.log('[DEBUG generateService] result.data.codeSnippet:', result.data.codeSnippet ? 'present' : 'missing');
+
+            // Show processing steps (Analysis Process)
+            if (result.data.processingSteps && result.data.processingSteps.length > 0) {
+              console.log('[DEBUG generateService] Showing', result.data.processingSteps.length, 'processing steps');
+              await showSessionProgress(sessionId, result.data.processingSteps);
+            }
+
+            // Extract workflowResult from the response - store but don't display yet
+            // User will see the result after clicking "Yes, execute and return results"
+            const workflowResult = result.data.workflowResult as ServiceExecutionResult | undefined;
+            console.log('[DEBUG generateService] workflowResult:', workflowResult ? 'present' : 'missing');
+
+            // Store the workflow result in pending state - don't display ServiceExecutionResultDisplay yet
+            // The user needs to confirm they want to see the detailed results first
+            if (workflowResult) {
+              setPendingWorkflowResult(workflowResult);
+              console.log('[DEBUG generateService] Stored workflowResult in pendingWorkflowResult');
+            }
+
+            // Build success message with short code preview
+            const serviceName = result.data.serviceName || 'DividendProcessingService';
+            let messageContent = `**Service Generated Successfully!**\n\n`;
+            messageContent += `The service \`${serviceName}\` has been created and registered.\n\n`;
+
+            // Show only a short preview of the code
+            if (result.data.codeSnippet) {
+              // Extract just the class definition header (first few lines)
+              const codeLines = result.data.codeSnippet.split('\n');
+              const previewLines = codeLines.slice(0, 8).join('\n'); // First 8 lines
+              messageContent += `**Code Preview:**\n\`\`\`python\n${previewLines}\n    # ... (${codeLines.length - 8} more lines)\n\`\`\`\n\n`;
+            }
+
+            // Ask user if they want to execute the new service to process the original email request
+            messageContent += `Would you like me to execute this new service to process your original email request?`;
+
+            // Add success message with action button
+            const successMessage: ChatMessage = {
+              id: Date.now().toString(),
+              role: 'assistant',
+              content: messageContent,
+              timestamp: new Date(),
+              actions: [
+                { id: 'returnData', label: 'Yes, execute and return results', type: 'returnData' },
+                { id: 'done', label: 'No, I\'m done', type: 'done' },
+              ],
+            };
+            console.log('[DEBUG generateService] Adding success message to chat');
+            setChatMessages((prev) => {
+              console.log('[DEBUG generateService] Previous messages count:', prev.length);
+              return [...prev, successMessage];
+            });
+          } else {
+            console.log('[DEBUG generateService] API returned success=false or no data');
+          }
+        } catch (error) {
+          console.error('[ERROR] Service execution failed:', error);
+          const errorMessage: ChatMessage = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: 'Sorry, there was an error executing the service. Please try again.',
+            timestamp: new Date(),
+          };
+          setChatMessages((prev) => [...prev, errorMessage]);
+        } finally {
+          setIsLoading(false);
+          console.log('[DEBUG generateService] Finished, isLoading set to false');
+        }
+      } else {
+        console.error('[ERROR] No workflowSipoc available for generateService action');
+      }
+    } else if (actionType === 'returnData') {
+      // User wants to see detailed results from the already executed service
+      // Use the pendingWorkflowResult which was stored when service was generated
+      const workflowResultToShow = pendingWorkflowResult || serviceExecutionResult;
+
+      if (analysisResult && workflowResultToShow) {
+        // Build detailed response message with table format (similar to first email query result)
+        let responseContent = `**Service Execution Results**\n\n`;
+        responseContent += `**Original Request:** ${analysisResult.userIntent}\n\n`;
+        responseContent += `**Email Subject:** ${analysisResult.emailSubject}\n\n`;
+        responseContent += `**Workflow:** ${workflowResultToShow.workflowType}\n\n`;
+        responseContent += `**Status:** ${workflowResultToShow.completedSteps}/${workflowResultToShow.totalSteps} steps completed ✓\n\n`;
+
+        // Show detailed results in table format
+        responseContent += `**Results Detail:**\n\n`;
+
+        // Build table based on workflow type
+        if (workflowResultToShow.workflowType === 'dividend_processing') {
+          // Dividend processing detail table
+          responseContent += `| Metric | Value |\n`;
+          responseContent += `|--------|-------|\n`;
+          responseContent += `| Workflow Type | ${workflowResultToShow.workflowType} |\n`;
+          responseContent += `| Total Steps | ${workflowResultToShow.totalSteps} |\n`;
+          responseContent += `| Completed Steps | ${workflowResultToShow.completedSteps} |\n`;
+
+          if (workflowResultToShow.summary) {
+            const summary = workflowResultToShow.summary as Record<string, unknown>;
+            if (summary.success_rate) responseContent += `| Success Rate | ${summary.success_rate} |\n`;
+            if (summary.execution_status) responseContent += `| Execution Status | ${summary.execution_status} |\n`;
+            if (summary.total_distribution) responseContent += `| Total Distribution | ¥${Number(summary.total_distribution).toLocaleString()} |\n`;
+            if (summary.funds_processed) responseContent += `| Funds Processed | ${summary.funds_processed} |\n`;
+            if (summary.accounts_processed) responseContent += `| Accounts Processed | ${summary.accounts_processed} |\n`;
+            if (summary.report_id) responseContent += `| Report ID | ${summary.report_id} |\n`;
+          }
+        } else {
+          // Generic detail table for other workflow types
+          responseContent += `| Metric | Value |\n`;
+          responseContent += `|--------|-------|\n`;
+          responseContent += `| Workflow Type | ${workflowResultToShow.workflowType} |\n`;
+          responseContent += `| Total Steps | ${workflowResultToShow.totalSteps} |\n`;
+          responseContent += `| Completed Steps | ${workflowResultToShow.completedSteps} |\n`;
+
+          if (workflowResultToShow.summary) {
+            for (const [key, value] of Object.entries(workflowResultToShow.summary)) {
+              if (key !== 'query_results' && key !== 'analysis_results' && value !== undefined) {
+                const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                responseContent += `| ${formattedKey} | ${value} |\n`;
+              }
+            }
+          }
+        }
+
+        responseContent += `\nThe service has successfully processed your request. This workflow is now saved and can automatically handle similar requests in the future.`;
+
+        const resultMessage: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: responseContent,
+          timestamp: new Date(),
+        };
+        setChatMessages((prev) => [...prev, resultMessage]);
+
+        // Now show the ServiceExecutionResultDisplay component
+        if (pendingWorkflowResult) {
+          setServiceExecutionResult(pendingWorkflowResult);
+          setPendingWorkflowResult(null); // Clear pending state
+        }
+      } else if (analysisResult) {
+        // Fallback: show analysis data if no execution result available
+        const fallbackMessage: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `**Email Analysis Data:**\n\n` +
+            `**Subject:** ${analysisResult.emailSubject}\n\n` +
+            `**Summary:** ${analysisResult.summary}\n\n` +
+            `**Detected Intent:** ${analysisResult.userIntent}\n\n` +
+            `**Suggested Action:** ${analysisResult.suggestedAction}\n\n` +
+            (analysisResult.attachments && analysisResult.attachments.length > 0
+              ? `**Attachments:** ${analysisResult.attachments.join(', ')}\n\n`
+              : '') +
+            `The service has been registered and is ready to process similar requests.`,
+          timestamp: new Date(),
+        };
+        setChatMessages((prev) => [...prev, fallbackMessage]);
+      } else {
+        const noDataMessage: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: 'The service has been successfully generated. No additional email data is available at this time.',
+          timestamp: new Date(),
+        };
+        setChatMessages((prev) => [...prev, noDataMessage]);
+      }
+    } else if (actionType === 'done') {
+      // User is done, just acknowledge
+      const doneMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: 'Great! The service has been saved. You can now process similar email requests automatically. Feel free to select another email to analyze.',
+        timestamp: new Date(),
+      };
+      setChatMessages((prev) => [...prev, doneMessage]);
     } else if (actionType === 'wrong') {
       // SIPOC is wrong - ask for corrections with options
       setSipocDocument(null);
@@ -857,16 +1183,64 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={handleAuthComplete}
+        onLogin={handleLogin}
+      />
+
+      {/* Permission Modal - shows after department popup */}
+      <PermissionModal
+        isOpen={showPermissionModal}
+        department={userDepartment || ''}
+        services={userServices}
+        sharedFolders={sharedFolders}
+        onContinue={handlePermissionComplete}
+      />
+
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {activeTab === 'email' && (
-        <EmailList
-          emails={emails}
-          selection={selection}
-          onSelectionChange={handleEmailSelection}
-          onEmailClick={handleEmailClick}
-          onAnalyze={handleAnalyze}
-        />
+      {activeTab === 'email' && isAuthenticated && (
+        <div className="list-panel">
+          {/* Sub-tab navigation for Email Folders / Email List */}
+          <div className="email-subtab-nav">
+            <button
+              className={`subtab-btn ${emailSubTab === 'folders' ? 'active' : ''}`}
+              onClick={handleBackToFolders}
+            >
+              Email Folders
+            </button>
+            {selectedFolderId && (
+              <button
+                className={`subtab-btn ${emailSubTab === 'emails' ? 'active' : ''}`}
+                onClick={() => setEmailSubTab('emails')}
+              >
+                {folders.find(f => f.id === selectedFolderId)?.name || 'Emails'}
+              </button>
+            )}
+          </div>
+
+          {/* Email Folders View */}
+          {emailSubTab === 'folders' && (
+            <EmailFolder
+              folders={folders}
+              selectedFolderId={selectedFolderId}
+              onFolderSelect={handleFolderSelect}
+            />
+          )}
+
+          {/* Email List View */}
+          {emailSubTab === 'emails' && selectedFolderId && (
+            <EmailList
+              emails={emails}
+              selection={selection}
+              onSelectionChange={handleEmailSelection}
+              onEmailClick={handleEmailClick}
+              onAnalyze={handleAnalyze}
+            />
+          )}
+        </div>
       )}
 
       <div className="main-content">
@@ -875,6 +1249,7 @@ function App() {
           messages={chatMessages}
           sipocDocument={sipocDocument}
           workflowSipoc={workflowSipoc}
+          serviceExecutionResult={serviceExecutionResult}
           isLoading={isLoading}
           analysisSessions={analysisSessions}
           onToggleSessionCollapse={toggleSessionCollapse}
@@ -883,6 +1258,101 @@ function App() {
           onInputSubmit={handleInputSubmit}
           onGenerateSipoc={handleGenerateSipoc}
           onCollaborationComplete={showPendingSteps}
+          onAnalysisUpdate={(updatedIntent, updatedAction) => {
+            // Update the analysis result with user's edits
+            if (analysisResult) {
+              setAnalysisResult({
+                ...analysisResult,
+                userIntent: updatedIntent,
+                suggestedAction: updatedAction,
+              });
+            }
+          }}
+          onGoOn={() => {
+            // User confirmed the analysis result without modifications
+            // Trigger the flow to continue - simulate clicking confirm
+            if (analysisResult) {
+              handleActionClick('confirm');
+            }
+          }}
+          onReanalyze={async (updatedIntent, updatedAction) => {
+            // User modified intent/action and wants to reanalyze
+            // Clear current analysis and chat, then re-run analysis with updated context
+            if (analysisResult && selection.selectedEmails.length > 0) {
+              // Reset states for fresh analysis
+              setChatMessages([]);
+              setSipocDocument(null);
+              setPendingSipoc(null);
+              setWorkflowSipoc(null);
+              setServiceExecutionResult(null);
+              setPendingWorkflowResult(null);
+              setAnalysisSessions([]);
+
+              // Update analysis result with user's corrections before reanalyzing
+              const updatedAnalysisResult = {
+                ...analysisResult,
+                userIntent: updatedIntent,
+                suggestedAction: updatedAction,
+              };
+              setAnalysisResult(updatedAnalysisResult);
+
+              // Re-run analysis (simulating the analyze button click)
+              setIsLoading(true);
+              const sessionId = createNewSession(0);
+
+              try {
+                const result = await analyzeEmails(selection.selectedEmails);
+
+                if (result.success && result.data) {
+                  // Show processing steps
+                  if (result.data.processingSteps && result.data.processingSteps.length > 0) {
+                    await showSessionProgress(sessionId, result.data.processingSteps);
+                  }
+
+                  // Update with new analysis but keep user's corrections if they're more specific
+                  const newAnalysis = {
+                    ...result.data,
+                    // Keep user's intent if they provided a more specific one
+                    userIntent: updatedIntent || result.data.userIntent,
+                    suggestedAction: updatedAction || result.data.suggestedAction,
+                  };
+                  setAnalysisResult(newAnalysis);
+
+                  // Build message content
+                  let messageContent = `I've reanalyzed the email with your feedback.\n\n**Based on the updated context:** ${newAnalysis.userIntent}\n\n`;
+
+                  if (newAnalysis.matchedService) {
+                    messageContent += `**✓ Found Matching Service:** \`${newAnalysis.matchedService}\`\n\n`;
+                    messageContent += `**Suggested Action:** ${newAnalysis.suggestedAction}\n\n`;
+                    messageContent += `Would you like me to proceed with this action?`;
+                  } else {
+                    messageContent += `**✗ No Matching Service Found**\n\n`;
+                    messageContent += `I can help you create a new service workflow for this request. Would you like to proceed?`;
+                  }
+
+                  // Complete the session
+                  setAnalysisSessions(prev => prev.map(s =>
+                    s.id === sessionId ? { ...s, isComplete: true } : s
+                  ));
+
+                  // Add AI message with actions
+                  const aiMessage: ChatMessage = {
+                    id: Date.now().toString(),
+                    role: 'assistant',
+                    content: messageContent,
+                    timestamp: new Date(),
+                    actions: [
+                      { id: '1', label: 'Yes, proceed', type: 'confirm' },
+                      { id: '2', label: 'No, let me modify', type: 'reject' },
+                    ],
+                  };
+                  setChatMessages([aiMessage]);
+                }
+              } finally {
+                setIsLoading(false);
+              }
+            }
+          }}
         />
       </div>
     </div>

@@ -234,8 +234,30 @@ export async function sendChatMessage(
   }
 }
 
+// Execute service result type
+export interface ExecuteServiceResult {
+  message: string;
+  processingSteps?: ProcessingStep[];
+  codeSnippet?: string;
+  serviceName?: string;
+  workflowResult?: {
+    success: boolean;
+    workflowType: string;
+    totalSteps: number;
+    completedSteps: number;
+    stepResults: Array<{
+      stepNumber: number;
+      stepName: string;
+      status: string;
+      message: string;
+      data?: Record<string, unknown>;
+    }>;
+    summary?: Record<string, unknown>;
+  };
+}
+
 // Execute service
-export async function executeService(sipoc: SIPOCDocument): Promise<ApiResponse<{ message: string; processingSteps?: ProcessingStep[] }>> {
+export async function executeService(sipoc: SIPOCDocument): Promise<ApiResponse<ExecuteServiceResult>> {
   try {
     const response = await api.post('/execute', {
       sipoc: {
@@ -248,12 +270,26 @@ export async function executeService(sipoc: SIPOCDocument): Promise<ApiResponse<
       sessionId: SESSION_ID,
     });
 
+    console.log('[DEBUG executeService] Raw API response:', response.data);
+
     if (response.data.success) {
+      const data = response.data.data;
+      console.log('[DEBUG executeService] Parsed data:', {
+        message: data.message,
+        codeSnippet: data.codeSnippet ? 'present (length: ' + data.codeSnippet.length + ')' : 'missing',
+        serviceName: data.serviceName,
+        workflowResult: data.workflowResult ? 'present' : 'missing',
+        processingSteps: data.processingSteps?.length || 0
+      });
+
       return {
         success: true,
         data: {
-          message: response.data.data.message,
-          processingSteps: response.data.data.processingSteps || undefined,
+          message: data.message,
+          processingSteps: data.processingSteps || undefined,
+          codeSnippet: data.codeSnippet || undefined,
+          serviceName: data.serviceName || undefined,
+          workflowResult: data.workflowResult || undefined,
         },
       };
     }

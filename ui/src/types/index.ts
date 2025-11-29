@@ -31,6 +31,17 @@ export interface Folder {
   isExpanded?: boolean;
 }
 
+// Feedback types
+export type FeedbackType = 'positive' | 'negative' | null;
+
+export interface FeedbackData {
+  messageId: string;
+  feedbackType: FeedbackType;
+  targetType: 'memory' | 'service';
+  targetName: string;
+  timestamp: Date;
+}
+
 // Chat message types
 export interface ChatMessage {
   id: string;
@@ -38,14 +49,38 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   actions?: ChatAction[];
+  feedback?: FeedbackType; // User's feedback on this message
+  canFeedback?: boolean; // Whether this message can receive feedback
 }
 
 export interface ChatAction {
   id: string;
   label: string;
-  type: 'confirm' | 'reject' | 'correct' | 'wrong' | 'option' | 'generate' | 'input' | 'reanalyze' | 'generateWorkflow';
+  type: 'confirm' | 'reject' | 'correct' | 'wrong' | 'option' | 'generate' | 'input' | 'reanalyze' | 'generateWorkflow' | 'generateService' | 'returnData' | 'done';
   value?: string; // Used for option type to send as message
   placeholder?: string; // Used for input type to show placeholder text
+}
+
+// Workflow step execution result
+export interface WorkflowStepResult {
+  stepNumber: number;
+  stepName: string;
+  status: 'completed' | 'in_progress' | 'pending' | 'error';
+  data: Record<string, unknown>;
+  message: string;
+  timestamp: string;
+}
+
+// Service execution result
+export interface ServiceExecutionResult {
+  success: boolean;
+  workflowType: string;
+  totalSteps: number;
+  completedSteps: number;
+  stepResults: WorkflowStepResult[];
+  summary: Record<string, unknown>;
+  executionData: Record<string, unknown>;
+  timestamp: string;
 }
 
 // Collaboration role type

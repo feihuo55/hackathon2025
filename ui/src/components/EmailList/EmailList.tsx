@@ -75,7 +75,7 @@ export function EmailList({
   const hoveredEmail = hoveredEmailId ? filteredEmails.find(e => e.id === hoveredEmailId) : null;
 
   return (
-    <div className="list-panel">
+    <div className="email-list-container">
       <div className="list-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <h2>Emails</h2>
@@ -185,6 +185,15 @@ export function EmailList({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// Also export a standalone version that wraps itself in list-panel for backward compatibility
+export function EmailListPanel(props: EmailListProps) {
+  return (
+    <div className="list-panel">
+      <EmailList {...props} />
     </div>
   );
 }

@@ -1,15 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, CheckCircle, ChevronDown, ChevronUp, Users, Bot, Briefcase, Code, Check, Edit2, Brain, Database, Cpu, FileCode, Workflow, Zap, Search } from 'lucide-react';
+import { Send, Loader2, CheckCircle, ChevronDown, ChevronUp, Users, Bot, Briefcase, Code, Check, Edit2, Brain, Database, Cpu, FileCode, Zap, Search, Play, CheckCircle2, Clock, AlertCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { BPMWorkflow } from '../BPMWorkflow/BPMWorkflow';
-import type { ChatMessage, SIPOCDocument, AnalysisSession, CollaborationSession, ProcessingStep, ThinkingPoint, AgentThinking, StepDetail } from '../../types';
+import type { ChatMessage, SIPOCDocument, AnalysisSession, CollaborationSession, ProcessingStep, ThinkingPoint, AgentThinking, StepDetail, ServiceExecutionResult, WorkflowStepResult, FeedbackType } from '../../types';
 
 interface ChatWindowProps {
   messages: ChatMessage[];
   onSendMessage: (message: string) => void;
   onActionClick: (actionType: string, optionValue?: string, optionLabel?: string) => void;
   onInputSubmit?: (inputValue: string, placeholder?: string) => void;
+  onFeedback?: (messageId: string, feedbackType: FeedbackType) => void;
   sipocDocument: SIPOCDocument | null;
   workflowSipoc?: SIPOCDocument | null;
+  serviceExecutionResult?: ServiceExecutionResult | null;
   isLoading: boolean;
   analysisSessions: AnalysisSession[];
   onToggleSessionCollapse: (sessionId: string) => void;
@@ -17,20 +19,195 @@ interface ChatWindowProps {
   onCollaborationComplete?: (sessionId: string) => void;
 }
 
-// Simple markdown parser for bold text
-function renderMarkdown(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, index) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={index}>{part.slice(2, -2)}</strong>;
+// Parse markdown table to structured data
+function parseMarkdownTable(tableText: string): { headers: string[]; rows: string[][] } | null {
+  const lines = tableText.trim().split('\n').filter(line => line.trim());
+  if (lines.length < 2) return null;
+
+  // Check if it's a table (has pipe characters)
+  if (!lines[0].includes('|')) return null;
+
+  // Parse header row
+  const headerLine = lines[0];
+  const headers = headerLine.split('|').map(cell => cell.trim()).filter(cell => cell);
+
+  // Skip separator row (|---|---|)
+  let dataStartIndex = 1;
+  if (lines[1] && lines[1].match(/^\|?[\s-:|]+\|?$/)) {
+    dataStartIndex = 2;
+  }
+
+  // Parse data rows
+  const rows: string[][] = [];
+  for (let i = dataStartIndex; i < lines.length; i++) {
+    const cells = lines[i].split('|').map(cell => cell.trim()).filter(cell => cell);
+    if (cells.length > 0) {
+      rows.push(cells);
     }
-    // Handle newlines
-    return part.split('\n').map((line, lineIndex, arr) => (
-      <span key={`${index}-${lineIndex}`}>
-        {line}
-        {lineIndex < arr.length - 1 && <br />}
-      </span>
-    ));
+  }
+
+  return { headers, rows };
+}
+
+// Render a styled table component
+function renderTable(tableData: { headers: string[]; rows: string[][] }, key: string) {
+  // Detect if it's a key-value style table (2 columns with headers like "Metric | Value")
+  const isKeyValueTable = tableData.headers.length === 2 &&
+    (tableData.headers[1].toLowerCase().includes('value') ||
+     tableData.headers[1].toLowerCase().includes('数值'));
+
+  if (isKeyValueTable) {
+    return (
+      <div key={key} className="data-card">
+        <div className="data-card-content">
+          {tableData.rows.map((row, rowIndex) => {
+            const label = row[0] || '';
+            const value = row[1] || '';
+            const isPositive = value.includes('📈') || value.includes('+');
+            const isNegative = value.includes('📉') || value.includes('-');
+
+            return (
+              <div key={rowIndex} className="data-card-row">
+                <span className="data-card-label">{label}</span>
+                <span className={`data-card-value ${isPositive ? 'positive' : ''} ${isNegative ? 'negative' : ''}`}>
+                  {value}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Regular table with multiple columns
+  return (
+    <div key={key} className="markdown-table-container">
+      <table className="markdown-table">
+        <thead>
+          <tr>
+            {tableData.headers.map((header, i) => (
+              <th key={i}>{header}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {tableData.rows.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              {row.map((cell, cellIndex) => {
+                const isPositive = cell.includes('📈') || (cell.includes('+') && cell.includes('%'));
+                const isNegative = cell.includes('📉') || (cell.startsWith('-') && cell.includes('%'));
+                return (
+                  <td key={cellIndex} className={isPositive ? 'positive' : isNegative ? 'negative' : ''}>
+                    {cell}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Enhanced markdown parser for bold text, code blocks, and tables
+function renderMarkdown(text: string) {
+  // First, split by code blocks
+  const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+  const segments: { type: 'text' | 'code' | 'table'; content: string; language?: string; tableData?: { headers: string[]; rows: string[][] } }[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    // Add text before code block
+    if (match.index > lastIndex) {
+      segments.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+    }
+    // Add code block
+    segments.push({ type: 'code', content: match[2], language: match[1] || 'python' });
+    lastIndex = match.index + match[0].length;
+  }
+  // Add remaining text
+  if (lastIndex < text.length) {
+    segments.push({ type: 'text', content: text.slice(lastIndex) });
+  }
+
+  // If no code blocks found, treat entire text as regular text
+  if (segments.length === 0) {
+    segments.push({ type: 'text', content: text });
+  }
+
+  // Process text segments to extract tables
+  const processedSegments: typeof segments = [];
+  for (const segment of segments) {
+    if (segment.type === 'text') {
+      // Look for markdown tables in text
+      const tableRegex = /(\|[^\n]+\|\n\|[-:\s|]+\|\n(?:\|[^\n]+\|\n?)+)/g;
+      let textLastIndex = 0;
+      let tableMatch;
+      const content = segment.content;
+
+      while ((tableMatch = tableRegex.exec(content)) !== null) {
+        // Add text before table
+        if (tableMatch.index > textLastIndex) {
+          processedSegments.push({ type: 'text', content: content.slice(textLastIndex, tableMatch.index) });
+        }
+        // Parse and add table
+        const tableData = parseMarkdownTable(tableMatch[1]);
+        if (tableData) {
+          processedSegments.push({ type: 'table', content: tableMatch[1], tableData });
+        } else {
+          processedSegments.push({ type: 'text', content: tableMatch[1] });
+        }
+        textLastIndex = tableMatch.index + tableMatch[0].length;
+      }
+      // Add remaining text after tables, or entire content if no tables found
+      if (textLastIndex === 0) {
+        // No tables found, add entire segment
+        processedSegments.push(segment);
+      } else if (textLastIndex < content.length) {
+        // Tables found, add remaining text after last table
+        processedSegments.push({ type: 'text', content: content.slice(textLastIndex) });
+      }
+    } else {
+      processedSegments.push(segment);
+    }
+  }
+
+  return processedSegments.map((segment, segmentIndex) => {
+    if (segment.type === 'code') {
+      return (
+        <div key={segmentIndex} className="code-block">
+          <div className="code-header">
+            <span className="code-language">{segment.language}</span>
+            <span className="code-label">Generated Service</span>
+          </div>
+          <pre className="code-content">
+            <code>{segment.content}</code>
+          </pre>
+        </div>
+      );
+    }
+
+    if (segment.type === 'table' && segment.tableData) {
+      return renderTable(segment.tableData, `table-${segmentIndex}`);
+    }
+
+    // Handle regular text with bold formatting
+    const parts = segment.content.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={`${segmentIndex}-${index}`}>{part.slice(2, -2)}</strong>;
+      }
+      // Handle newlines
+      return part.split('\n').map((line, lineIndex, arr) => (
+        <span key={`${segmentIndex}-${index}-${lineIndex}`}>
+          {line}
+          {lineIndex < arr.length - 1 && <br />}
+        </span>
+      ));
+    });
   });
 }
 
@@ -626,20 +803,230 @@ function SIPOCDisplay({
   );
 }
 
+// Service Execution Result Display Component
+function ServiceExecutionResultDisplay({
+  result,
+}: {
+  result: ServiceExecutionResult;
+}) {
+  const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
+
+  const toggleStepExpand = (stepNumber: number) => {
+    setExpandedSteps(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(stepNumber)) {
+        newSet.delete(stepNumber);
+      } else {
+        newSet.add(stepNumber);
+      }
+      return newSet;
+    });
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle2 size={16} className="status-icon completed" />;
+      case 'in_progress':
+        return <Clock size={16} className="status-icon in-progress" />;
+      case 'error':
+        return <AlertCircle size={16} className="status-icon error" />;
+      default:
+        return <Clock size={16} className="status-icon pending" />;
+    }
+  };
+
+  const getWorkflowTypeLabel = (type: string) => {
+    switch (type) {
+      case 'dividend_processing':
+        return 'Dividend Processing';
+      case 'nav_query':
+        return 'NAV Query';
+      case 'compliance_report':
+        return 'Compliance Report';
+      case 'performance_query':
+        return 'Performance Query';
+      default:
+        return 'Workflow Execution';
+    }
+  };
+
+  const formatDataValue = (value: unknown): string => {
+    if (typeof value === 'number') {
+      return value.toLocaleString();
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (Array.isArray(value)) {
+      return `${value.length} items`;
+    }
+    if (typeof value === 'object' && value !== null) {
+      return JSON.stringify(value, null, 2);
+    }
+    return String(value);
+  };
+
+  return (
+    <div className="service-execution-result">
+      <div className="execution-header">
+        <div className="execution-title">
+          <CheckCircle2 size={24} className="success-icon" />
+          <div>
+            <h3>Service Executed Successfully</h3>
+            <span className="workflow-type">{getWorkflowTypeLabel(result.workflowType)}</span>
+          </div>
+        </div>
+        <div className="execution-stats">
+          <div className="stat">
+            <span className="stat-value">{result.completedSteps}/{result.totalSteps}</span>
+            <span className="stat-label">Steps Completed</span>
+          </div>
+          <div className="stat">
+            <span className="stat-value">{result.summary?.success_rate as string || '100%'}</span>
+            <span className="stat-label">Success Rate</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="execution-steps">
+        <h4>Execution Steps</h4>
+        {result.stepResults.map((step) => (
+          <div
+            key={step.stepNumber}
+            className={`execution-step ${expandedSteps.has(step.stepNumber) ? 'expanded' : ''}`}
+          >
+            <div
+              className="step-summary"
+              onClick={() => toggleStepExpand(step.stepNumber)}
+            >
+              {getStatusIcon(step.status)}
+              <span className="step-number">Step {step.stepNumber}</span>
+              <span className="step-name">{step.stepName}</span>
+              <span className="step-message">{step.message}</span>
+              <ChevronDown size={16} className={`expand-icon ${expandedSteps.has(step.stepNumber) ? 'rotated' : ''}`} />
+            </div>
+            {expandedSteps.has(step.stepNumber) && step.data && Object.keys(step.data).length > 0 && (
+              <div className="step-data">
+                {Object.entries(step.data).map(([key, value]) => (
+                  <div key={key} className="data-item">
+                    <span className="data-key">{key.replace(/_/g, ' ')}:</span>
+                    <span className="data-value">{formatDataValue(value)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {result.summary && (
+        <div className="execution-summary">
+          <h4>Summary</h4>
+          <div className="summary-grid">
+            {Object.entries(result.summary).map(([key, value]) => {
+              if (key === 'query_results' || key === 'analysis_results') return null;
+              return (
+                <div key={key} className="summary-item">
+                  <span className="summary-label">{key.replace(/_/g, ' ')}</span>
+                  <span className="summary-value">{formatDataValue(value)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Message bubble component
 function MessageBubble({
   message,
   isVerticalOptions,
   onActionClick,
   onInputSubmit,
+  onFeedback,
+  feedbackState,
 }: {
   message: ChatMessage;
   isVerticalOptions: boolean;
   onActionClick: (actionType: string, optionValue?: string, optionLabel?: string) => void;
   onInputSubmit?: (inputValue: string, placeholder?: string) => void;
+  onFeedback?: (messageId: string, feedbackType: FeedbackType) => void;
+  feedbackState?: FeedbackType;
 }) {
   const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
   const [showInputFor, setShowInputFor] = useState<string | null>(null);
+  const [isProcessingFeedback, setIsProcessingFeedback] = useState(false);
+  const [feedbackUpdates, setFeedbackUpdates] = useState<{ type: string; name: string; action: string }[] | null>(null);
+
+  // Determine if this message should show feedback buttons
+  // Show for all assistant messages with meaningful content
+  const shouldShowFeedback = message.role === 'assistant' && message.content.length > 20;
+
+  // AI analyzes message content to determine what to update
+  const analyzeAndUpdate = (messageContent: string, feedbackType: FeedbackType): { type: string; name: string; action: string }[] => {
+    const updates: { type: string; name: string; action: string }[] = [];
+    const content = messageContent.toLowerCase();
+
+    // Analyze message content to determine relevant components
+    if (content.includes('dividend') || content.includes('distribution') || content.includes('fund')) {
+      updates.push({
+        type: 'Service',
+        name: 'DividendProcessingService',
+        action: feedbackType === 'positive' ? 'Reinforced patterns' : 'Flagged for review'
+      });
+    }
+
+    if (content.includes('sipoc') || content.includes('process') || content.includes('workflow')) {
+      updates.push({
+        type: 'Memory',
+        name: 'WorkflowPatternMemory',
+        action: feedbackType === 'positive' ? 'Enhanced pattern recognition' : 'Adjusted matching criteria'
+      });
+    }
+
+    if (content.includes('email') || content.includes('analysis') || content.includes('intent')) {
+      updates.push({
+        type: 'RAG',
+        name: 'EmailAnalysisRAG',
+        action: feedbackType === 'positive' ? 'Updated relevance scoring' : 'Recalibrated embeddings'
+      });
+    }
+
+    // If no specific match, update general memory
+    if (updates.length === 0) {
+      updates.push({
+        type: 'Memory',
+        name: 'GeneralResponseMemory',
+        action: feedbackType === 'positive' ? 'Positive feedback recorded' : 'Improvement noted'
+      });
+    }
+
+    return updates;
+  };
+
+  const handleFeedbackClick = async (type: FeedbackType) => {
+    if (!type) return;
+
+    setIsProcessingFeedback(true);
+
+    // Simulate AI processing time
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // AI analyzes and determines what to update
+    const updates = analyzeAndUpdate(message.content, type);
+    setFeedbackUpdates(updates);
+
+    // Call parent handler
+    if (onFeedback) {
+      onFeedback(message.id, type);
+    }
+
+    console.log(`[Feedback] ${type} feedback for message ${message.id}`, updates);
+    setIsProcessingFeedback(false);
+  };
 
   const handleInputChange = (actionId: string, value: string) => {
     setInputValues(prev => ({ ...prev, [actionId]: value }));
@@ -668,10 +1055,14 @@ function MessageBubble({
       case 'input':
         return 'btn-option-list';
       case 'confirm':
+      case 'returnData':
         return 'btn-confirm';
       case 'generate':
       case 'generateWorkflow':
         return 'btn-generate';
+      case 'done':
+      case 'reject':
+        return 'btn-reject';
       default:
         return 'btn-reject';
     }
@@ -735,6 +1126,65 @@ function MessageBubble({
             )}
           </div>
         )}
+
+        {/* Feedback buttons for assistant messages */}
+        {shouldShowFeedback && (
+          <div className="message-feedback">
+            {isProcessingFeedback ? (
+              <div className="feedback-processing">
+                <Loader2 size={14} className="spinner-icon" />
+                <span>AI analyzing feedback...</span>
+              </div>
+            ) : feedbackUpdates ? (
+              <div className="feedback-updates">
+                <div className="feedback-updates-header">
+                  <CheckCircle size={14} />
+                  <span>Updated based on your feedback:</span>
+                </div>
+                <div className="feedback-updates-list">
+                  {feedbackUpdates.map((update, index) => (
+                    <div key={index} className="feedback-update-item">
+                      <span className={`update-type ${update.type.toLowerCase()}`}>
+                        {update.type === 'Service' && <Cpu size={12} />}
+                        {update.type === 'Memory' && <Database size={12} />}
+                        {update.type === 'RAG' && <Search size={12} />}
+                        {update.type}
+                      </span>
+                      <span className="update-name">{update.name}</span>
+                      <span className="update-action">{update.action}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : feedbackState ? (
+              <div className={`feedback-given ${feedbackState}`}>
+                {feedbackState === 'positive' ? (
+                  <><ThumbsUp size={14} /> Thanks for your feedback!</>
+                ) : (
+                  <><ThumbsDown size={14} /> Thanks for your feedback!</>
+                )}
+              </div>
+            ) : (
+              <div className="feedback-buttons">
+                <span className="feedback-label">Was this helpful?</span>
+                <button
+                  className="feedback-btn positive"
+                  onClick={() => handleFeedbackClick('positive')}
+                  title="This was helpful"
+                >
+                  <ThumbsUp size={14} />
+                </button>
+                <button
+                  className="feedback-btn negative"
+                  onClick={() => handleFeedbackClick('negative')}
+                  title="This needs improvement"
+                >
+                  <ThumbsDown size={14} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -745,8 +1195,10 @@ export function ChatWindow({
   onSendMessage,
   onActionClick,
   onInputSubmit,
+  onFeedback,
   sipocDocument,
   workflowSipoc,
+  serviceExecutionResult,
   isLoading,
   analysisSessions,
   onToggleSessionCollapse,
@@ -755,6 +1207,15 @@ export function ChatWindow({
 }: ChatWindowProps) {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Track feedback state for each message
+  const [messageFeedback, setMessageFeedback] = useState<{ [messageId: string]: FeedbackType }>({});
+
+  // Handle feedback from MessageBubble
+  const handleFeedback = (messageId: string, feedbackType: FeedbackType) => {
+    setMessageFeedback(prev => ({ ...prev, [messageId]: feedbackType }));
+    // Call parent handler if provided
+    onFeedback?.(messageId, feedbackType);
+  };
   // Track which sessions have collaboration completed
   const [sessionsWithCollaborationComplete, setSessionsWithCollaborationComplete] = useState<Set<string>>(new Set());
 
@@ -782,7 +1243,7 @@ export function ChatWindow({
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
     return () => clearTimeout(timer);
-  }, [messages, analysisSessions, sipocDocument, workflowSipoc]);
+  }, [messages, analysisSessions, sipocDocument, workflowSipoc, serviceExecutionResult]);
 
   // Debug: Log sipocDocument changes
   useEffect(() => {
@@ -847,7 +1308,20 @@ export function ChatWindow({
               // Check if session is waiting for collaboration (more reliable flag from parent)
               const isWaitingForCollaboration = session.waitingForCollaboration === true;
 
-              console.log(`[DEBUG ChatWindow render] Session ${session.id}: isCollaborationComplete=${isCollaborationComplete}, hasCollaboration=${hasCollaboration}, isWaitingForCollaboration=${isWaitingForCollaboration}, sessionMessages=${sessionMessages.length}`);
+              // Check if this is a service generation session (after the main collaboration session)
+              // These sessions should NOT render messages here - they will be rendered in the dedicated section below
+              const lastMainSession = analysisSessions.find(s =>
+                s.steps.some(step => step.showCollaboration)
+              );
+              const lastMainSessionIndex = lastMainSession ? analysisSessions.indexOf(lastMainSession) : -1;
+              const isServiceGenSession = workflowSipoc && lastMainSessionIndex >= 0 && sessionIndex > lastMainSessionIndex;
+
+              console.log(`[DEBUG ChatWindow render] Session ${session.id}: isCollaborationComplete=${isCollaborationComplete}, hasCollaboration=${hasCollaboration}, isWaitingForCollaboration=${isWaitingForCollaboration}, sessionMessages=${sessionMessages.length}, isServiceGenSession=${isServiceGenSession}`);
+
+              // Skip rendering for service generation sessions - they are rendered below after the workflow diagram
+              if (isServiceGenSession) {
+                return null;
+              }
 
               return (
                 <div key={session.id}>
@@ -881,6 +1355,8 @@ export function ChatWindow({
                       isVerticalOptions={isVerticalOptions(msg.actions)}
                       onActionClick={onActionClick}
                       onInputSubmit={onInputSubmit}
+                      onFeedback={handleFeedback}
+                      feedbackState={messageFeedback[msg.id]}
                     />
                   ))}
                 </div>
@@ -896,6 +1372,8 @@ export function ChatWindow({
               isVerticalOptions={isVerticalOptions(msg.actions)}
               onActionClick={onActionClick}
               onInputSubmit={onInputSubmit}
+              onFeedback={handleFeedback}
+              feedbackState={messageFeedback[msg.id]}
             />
           ))
         )}
@@ -916,7 +1394,97 @@ export function ChatWindow({
               sipoc={workflowSipoc}
               title="Dividend Distribution Process - BPMN 2.0"
             />
+            {/* Show Generate Service button after workflow is displayed */}
+            {!serviceExecutionResult && (
+              <div className="workflow-actions">
+                <button
+                  className="btn btn-generate-service"
+                  onClick={() => onActionClick('generateService')}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 size={18} className="spinner-icon" />
+                      Generating Service...
+                    </>
+                  ) : (
+                    <>
+                      <Play size={18} />
+                      Generate Service
+                    </>
+                  )}
+                </button>
+                {!isLoading && (
+                  <p className="workflow-action-hint">
+                    Click to execute the workflow and generate the service based on this SIPOC definition.
+                  </p>
+                )}
+              </div>
+            )}
           </>
+        )}
+
+        {/* Show Analysis Process for service generation (sessions created after workflow is generated) */}
+        {workflowSipoc && analysisSessions.length > 0 && (() => {
+          // Find sessions that were created for service generation (after main flow)
+          const lastMainSession = analysisSessions.find(s =>
+            s.steps.some(step => step.showCollaboration) // Session with collaboration is the main SIPOC generation
+          );
+          // Only look for service generation sessions if there's a main session with collaboration
+          // Without a main session, there can't be service generation sessions yet
+          if (!lastMainSession) return null;
+
+          const lastMainSessionIndex = analysisSessions.indexOf(lastMainSession);
+          const serviceGenSessions = analysisSessions.filter((_, idx) => idx > lastMainSessionIndex);
+
+          console.log(`[DEBUG ChatWindow] Service gen sessions: ${serviceGenSessions.length}, lastMainSessionIndex: ${lastMainSessionIndex}`);
+
+          if (serviceGenSessions.length === 0) return null;
+
+          return (
+            <>
+              {serviceGenSessions.map((session) => {
+                const showLoading = isLoading && !session.isComplete;
+                const sessionIndex = analysisSessions.indexOf(session);
+                const nextSession = analysisSessions[sessionIndex + 1];
+                const startIdx = session.startMessageIndex;
+                const endIdx = nextSession ? nextSession.startMessageIndex : messages.length;
+                const sessionMessages = messages.slice(startIdx, endIdx);
+
+                console.log(`[DEBUG ChatWindow] Rendering service generation session ${session.id}: steps=${session.steps.length}, isComplete=${session.isComplete}, messages=${sessionMessages.length}`);
+
+                return (
+                  <div key={`service-gen-${session.id}`}>
+                    {session.steps.length > 0 && (
+                      <AnalysisSessionDisplay
+                        session={session}
+                        isCurrentlyLoading={showLoading}
+                        onToggleCollapse={() => onToggleSessionCollapse(session.id)}
+                        onGenerateSipoc={onGenerateSipoc}
+                      />
+                    )}
+                    {/* Show messages associated with this service generation session */}
+                    {sessionMessages.map((msg) => (
+                      <MessageBubble
+                        key={msg.id}
+                        message={msg}
+                        isVerticalOptions={isVerticalOptions(msg.actions)}
+                        onActionClick={onActionClick}
+                        onInputSubmit={onInputSubmit}
+                        onFeedback={handleFeedback}
+                        feedbackState={messageFeedback[msg.id]}
+                      />
+                    ))}
+                  </div>
+                );
+              })}
+            </>
+          );
+        })()}
+
+        {/* Show Service Execution Result */}
+        {serviceExecutionResult && (
+          <ServiceExecutionResultDisplay result={serviceExecutionResult} />
         )}
 
         {/* Show loading indicator only if no sessions or if the last session has no steps yet */}
