@@ -17,45 +17,16 @@ AWS_CONFIG = {
     "temperature": 0.7,
 }
 
-# Chroma 向量数据库配置（含 HNSW 索引优化）
+# Chroma 向量数据库配置
 CHROMA_CONFIG = {
     "persist_directory": str(BASE_DIR / "data" / "chroma_db"),
     "collection_name": "services",
-    # HNSW 索引优化参数
-    "hnsw_space": "cosine",           # 使用余弦相似度
-    "hnsw_construction_ef": 200,       # 构建时的搜索范围
-    "hnsw_search_ef": 100,             # 搜索时的范围
-    "hnsw_m": 16,                      # 每个节点的连接数
-}
-
-# Embedding 配置
-EMBEDDING_CONFIG = {
-    "provider": "sentence-transformer",  # sentence-transformer, bedrock
-    "model_name": "bge-small-zh",         # BGE 小型中文模型
-    "device": "cpu",                      # cpu 或 cuda
-    "normalize": True,
-}
-
-# BM25 配置
-BM25_CONFIG = {
-    "k1": 1.5,
-    "b": 0.75,
-    "epsilon": 0.25,
-}
-
-# 混合检索配置
-HYBRID_SEARCH_CONFIG = {
-    "vector_weight": 0.6,
-    "bm25_weight": 0.4,
-    "use_rrf": True,
-    "rrf_k": 60,
 }
 
 # 记忆系统配置
 MEMORY_CONFIG = {
     "max_episodic_entries": 100,
     "max_summary_length": 500,
-    "episodic_ttl_hours": 24.0,  # 事件记忆 24 小时过期
 }
 
 # Chainlit UI 配置

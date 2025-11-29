@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Business Process Automation - 托管银行智能流程自动化平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #1a202c;
+            background: #f7fafc;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+        }
+        header {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            padding: 48px 32px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5em;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+            color: white;
+        }
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.95;
+            font-weight: 300;
+            color: white;
+        }
+        .content {
+            padding: 32px;
+        }
+        section {
+            margin-bottom: 48px;
+        }
+        h2 {
+            color: #1e40af;
+            font-size: 1.75em;
+            font-weight: 600;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e5e7eb;
+            letter-spacing: -0.3px;
+        }
+        h3 {
+            color: #2563eb;
+            font-size: 1.25em;
+            font-weight: 600;
+            margin: 20px 0 12px 0;
+        }
+        h4 {
+            color: #1e40af;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        p {
+            color: #4b5563;
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 16px 0;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box h4 {
+            color: #1e40af;
+            margin-bottom: 8px;
+        }
+        .info-box p,
+        .info-box ul {
+            color: #1e40af;
+            font-size: 0.95em;
+        }
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box h4 {
+            color: #92400e;
+            margin-bottom: 8px;
+        }
+        .success-box {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success-box h4 {
+            color: #065f46;
+            margin-bottom: 8px;
+        }
+        ul,
+        ol {
+            margin-left: 24px;
+            margin-bottom: 12px;
+        }
+        li {
+            color: #4b5563;
+            margin-bottom: 6px;
+        }
+        .diagram {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        .diagram pre {
+            background: transparent;
+            color: #1e40af;
+            padding: 0;
+            font-size: 0.8em;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        thead {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+        }
+        th {
+            padding: 14px;
+            text-align: left;
+            font-weight: 600;
+        }
+        tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+        td {
+            padding: 14px;
+            color: #4b5563;
+        }
+        .toc {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        .toc h3 {
+            color: #1e40af;
+            margin-bottom: 16px;
+        }
+        .toc ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        .toc li {
+            padding: 6px 0;
+        }
+        .toc a {
+            color: #2563eb;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .toc a:hover {
+            color: #1e40af;
+            text-decoration: underline;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+        .card:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+        }
+        .card h4 {
+            color: #1e40af;
+            margin-bottom: 12px;
+        }
+        /* 架构图样式 */
+        .architecture-diagram {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            position: relative;
+        }
+        .arch-layer {
+            background: white;
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .arch-layer-title {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: white;
+            padding: 0 10px;
+            color: #1e40af;
+            font-weight: 600;
+        }
+        .arch-components {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .arch-component {
+            background: #eff6ff;
+            border: 1px solid #93c5fd;
+            border-radius: 6px;
+            padding: 12px 16px;
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #1e40af;
+        }
+        /* 流程图样式 */
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            overflow-x: auto;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .flow-step {
+            background: white;
+            border: 2px solid #60a5fa;
+            border-radius: 8px;
+            padding: 16px;
+            min-width: 150px;
+            text-align: center;
+            position: relative;
+        }
+        .flow-step.decision {
+            background: #fef3c7;
+            border-color: #fbbf24;
+            transform: rotate(0deg);
+        }
+        .flow-arrow {
+            color: #60a5fa;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        /* 场景卡片 */
+        .scenario-card {
+            background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+            border: 2px solid #facc15;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+        }
+        .scenario-title {
+            color: #713f12;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .scenario-flow {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+        /* 智能体卡片 */
+        .agent-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #86efac;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+        .agent-name {
+            color: #14532d;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .agent-role {
+            color: #166534;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            h2 {
+                font-size: 1.4em;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .arch-components {
+                flex-direction: column;
+            }
+            .flow-diagram {
+                flex-direction: column;
+            }
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏦 AI-Powered Business Process Automation</h1>
+            <p class="subtitle">托管银行智能流程自动化平台 - 基于对话式AI的业务流程革新</p>
+        </header>
+        <div class="content">
+            <!-- 目录 -->
+            <div class="toc">
+                <h3>📋 目录导航</h3>
+                <ul>
+                    <li><a href="#overview">1. 项目概述</a></li>
+                    <li><a href="#architecture">2. 系统架构</a></li>
+                    <li><a href="#agents">3. 智能体设计</a></li>
+                    <li><a href="#flows">4. 核心流程</a></li>
+                    <li><a href="#scenarios">5. 业务场景</a></li>
+                    <li><a href="#memory">6. 记忆系统</a></li>
+                    <li><a href="#implementation">7. 实施计划</a></li>
+                </ul>
+            </div>
+            <!-- 项目概述 -->
+            <section id="overview">
+                <h2>1. 项目概述</h2>
+                <div class="info-box">
+                    <h4>🎯 核心目标</h4>
+                    <p>通过自然语言对话实现托管银行业务流程的端到端自动化，让业务人员无需编程即可完成复杂的基金托管处理流程。</p>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <h4>💡 创新点</h4>
+                        <ul>
+                            <li>对话式交互界面</li>
+                            <li>智能意图识别</li>
+                            <li>自动服务生成</li>
+                            <li>SIPOC流程可视化</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>🛠 技术栈</h4>
+                        <ul>
+                            <li>UI框架: Chainlit</li>
+                            <li>多智能体: CrewAI</li>
+                            <li>向量数据库: Chroma</li>
+                            <li>RAG框架: LlamaIndex</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>📊 业务价值</h4>
+                        <ul>
+                            <li>效率提升 80%</li>
+                            <li>零代码操作</li>
+                            <li>错误率降低 90%</li>
+                            <li>7×24 小时服务</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            <!-- 系统架构 -->
+            <section id="architecture">
+                <h2>2. 系统架构设计</h2>
+                <div class="architecture-diagram">
+                    <div class="arch-layer">
+                        <span class="arch-layer-title">🖥 用户交互层</span>
+                        <div class="arch-components">
+                            <div class="arch-component">Chainlit 对话界面</div>
+                            <div class="arch-component">实时状态展示</div>
+                            <div class="arch-component">可视化面板</div>
+                        </div>
+                    </div>
+                    <div class="arch-layer">
+                        <span class="arch-layer-title">🤖 智能体协作层</span>
+                        <div class="arch-components">
+                            <div class="arch-component">意图分析智能体</div>
+                            <div class="arch-component">流程设计智能体</div>
+                            <div class="arch-component">服务构建智能体</div>
+                            <div class="arch-component">执行智能体</div>
+                        </div>
+                    </div>
+                    <div class="arch-layer">
+                        <span class="arch-layer-title">🧠 记忆管理层</span>
+                        <div class="arch-components">
+                            <div class="arch-component">事件记忆</div>
+                            <div class="arch-component">语义记忆</div>
+                            <div class="arch-component">程序记忆</div>
+                            <div class="arch-component">摘要记忆</div>
+                        </div>
+                    </div>
+                    <div class="arch-layer">
+                        <span class="arch-layer-title">📚 知识检索层</span>
+                        <div class="arch-components">
+                            <div class="arch-component">Chroma 向量库</div>
+                            <div class="arch-component">LlamaIndex RAG</div>
+                            <div class="arch-component">服务注册表</div>
+                        </div>
+                    </div>
+                    <div class="arch-layer">
+                        <span class="arch-layer-title">⚙️ 服务执行层</span>
+                        <div class="arch-components">
+                            <div class="arch-component">Mock MCP Services</div>
+                            <div class="arch-component">SIPOC Generator</div>
+                            <div class="arch-component">Process Visualizer</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- 智能体设计 -->
+            <section id="agents">
+                <h2>3. CrewAI 智能体设计</h2>
+                <div class="agent-card">
+                    <div class="agent-name">🔍 Intent Analyst (意图分析智能体)</div>
+                    <div class="agent-role">角色: 资深托管银行业务分析师</div>
+                    <p>负责理解用户的自然语言输入，准确识别业务意图，提取关键参数，为后续处理提供结构化信息。</p>
+                </div>
+                <div class="agent-card">
+                    <div class="agent-name">📋 Process Designer (流程设计智能体)</div>
+                    <div class="agent-role">角色: 业务流程专家</div>
+                    <p>将业务需求转化为标准化的SIPOC流程，生成可视化流程图，确保流程的完整性和可执行性。</p>
+                </div>
+                <div class="agent-card">
+                    <div class="agent-name">🛠 Service Builder (服务构建智能体)</div>
+                    <div class="agent-role">角色: 技术架构师</div>
+                    <p>检索现有服务或生成新的Mock服务，确保服务接口的标准化和可重用性。</p>
+                </div>
+                <div class="agent-card">
+                    <div class="agent-name">⚡ Executor (执行智能体)</div>
+                    <div class="agent-role">角色: 运营专家</div>
+                    <p>调用相应服务执行业务流程，监控执行状态，确保结果的准确性和及时性。</p>
+                </div>
+            </section>
+            <!-- 核心流程 -->
+            <section id="flows">
+                <h2>4. 核心业务流程</h2>
+                <h3>Flow 1: 现有服务调用流程</h3>
+                <div class="flow-diagram">
+                    <div class="flow-step">
+                        <strong>用户输入</strong><br>
+                        自然语言需求
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <strong>意图分析</strong><br>
+                        LLM理解需求
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step decision">
+                        <strong>RAG检索</strong><br>
+                        匹配现有服务？
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <strong>调用服务</strong><br>
+                        执行Mock MCP
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <strong>返回结果</strong><br>
+                        格式化展示
+                    </div>
+                </div>
+                <h3>Flow 2: 新服务生成流程</h3>
+                <div class="flow-diagram">
+                    <div class="flow-step">
+                        <strong>未匹配服务</strong><br>
+                        启动生成流程
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <strong>Group Chat</strong><br>
+                        多轮对话收集
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <strong>SIPOC生成</strong><br>
+                        流程文档化
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step decision">
+                        <strong>人工确认</strong><br>
+                        Human-in-Loop
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <strong>服务生成</strong><br>
+                        AI自动编码
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <strong>执行验证</strong><br>
+                        调用新服务
+                    </div>
+                </div>
+            </section>
+            <!-- 业务场景 -->
+            <section id="scenarios">
+                <h2>5. 托管银行业务场景</h2>
+                <div class="scenario-card">
+                    <div class="scenario-title">📊 场景一：基金净值查询</div>
+                    <p><strong>用户输入：</strong>"查询富国天惠基金今天的净值情况"</p>
+                    <div class="scenario-flow">
+                        <h4>处理流程：</h4>
+                        <ol>
+                            <li>意图识别 → 查询类/基金净值/富国天惠</li>
+                            <li>RAG检索 → 匹配到 getFundNAV 服务</li>
+                            <li>参数提取 → {fundCode: "161005", fundName: "富国天惠"}</li>
+                            <li>服务调用 → Mock返回净值数据</li>
+                            <li>结果展示 → 单位净值、累计净值、日涨跌幅</li>
+                        </ol>
+                    </div>
+                    <div class="success-box">
+                        <h4>预期输出</h4>
+                        <p>📈 富国天惠基金 (161005) 净值信息：<br>
+                            • 单位净值：2.8450元<br>
+                            • 累计净值：6.2180元<br>
+                            • 日涨跌幅：+0.15% (+0.0043元)<br>
+                            • 估算净值：2.8523元<br>
+                            • 更新时间：2024-11-26 15:00:00<br>
+                            • 基金规模：156.8亿元</p>
+                    </div>
+                </div>
+                <div class="scenario-card">
+                    <div class="scenario-title">💰 场景二：基金分红处理自动化</div>
+                    <p><strong>用户输入：</strong>"我需要自动处理本周所有基金的分红派息流程"</p>
+                    <div class="scenario-flow">
+                        <h4>处理流程：</h4>
+                        <ol>
+                            <li>意图识别 → 自动化流程/基金分红处理/批量操作</li>
+                            <li>RAG检索 → 未找到匹配服务</li>
+                            <li>启动Group Chat → BA Bot & Tech Bot协作</li>
+                            <li>需求收集 → 业务目标、数据输入、处理规则</li>
+                            <li>SIPOC生成 → 完整流程文档</li>
+                            <li>流程可视化 → 生成流程图</li>
+                            <li>人工审批 → 确认流程正确性</li>
+                            <li>服务生成 → AI创建fundDividendProcessing服务</li>
+                            <li>执行验证 → 调用新服务处理</li>
+                        </ol>
+                    </div>
+                    <div class="success-box">
+                        <h4>SIPOC 文档示例</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>组件</th>
+                                    <th>详细信息</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Suppliers</strong></td>
+                                    <td>基金公司、中登公司、托管行清算系统、监管机构</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Inputs</strong></td>
+                                    <td>分红公告、持有人信息、银行账户信息、税务规则</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Process</strong></td>
+                                    <td>1. 接收分红通知<br>2. 验证持有人权益<br>3. 计算应分金额<br>4. 扣税处理<br>5. 资金划付<br>6. 生成对账单</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outputs</strong></td>
+                                    <td>分红资金到账、持有人对账单、税务申报表、清算报告</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Customers</strong></td>
+                                    <td>基金持有人、基金公司、监管部门、税务部门</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <!-- 记忆系统 -->
+            <section id="memory">
+                <h2>6. 智能记忆系统</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>记忆类型</th>
+                                <th>特征</th>
+                                <th>应用场景</th>
+                                <th>存储示例</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Episodic Memory</strong><br>事件记忆</td>
+                                <td>
+                                    • 具体事件<br>
+                                    • 有时间戳<br>
+                                    • 上下文相关
+                                </td>
+                                <td>
+                                    • 用户交互历史<br>
+                                    • 服务调用记录<br>
+                                    • 错误处理日志
+                                </td>
+                                <td>
+                                    "2024-01-15 14:30<br>
+                                    用户查询AAPL持仓<br>
+                                    返回10,000股"
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Semantic Memory</strong><br>语义记忆</td>
+                                <td>
+                                    • 通用知识<br>
+                                    • 无时间性<br>
+                                    • 概念关联
+                                </td>
+                                <td>
+                                    • 业务规则<br>
+                                    • 术语定义<br>
+                                    • 领域知识
+                                </td>
+                                <td>
+                                    "股息再投资：<br>
+                                    将现金分红自动<br>
+                                    购买相同股票"
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Procedural Memory</strong><br>程序记忆</td>
+                                <td>
+                                    • 执行步骤<br>
+                                    • 流程模板<br>
+                                    • 可重复使用
+                                </td>
+                                <td>
+                                    • SIPOC流程<br>
+                                    • 服务调用模式<br>
+                                    • 最佳实践
+                                </td>
+                                <td>
+                                    "查询流程：<br>
+                                    1. 验证参数<br>
+                                    2. 调用API<br>
+                                    3. 格式化结果"
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Summary Memory</strong><br>摘要记忆</td>
+                                <td>
+                                    • 压缩信息<br>
+                                    • 长期趋势<br>
+                                    • 高度抽象
+                                </td>
+                                <td>
+                                    • 月度总结<br>
+                                    • 使用模式<br>
+                                    • 性能指标
+                                </td>
+                                <td>
+                                    "本月处理：<br>
+                                    查询请求 500次<br>
+                                    新服务生成 3个"
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="info-box">
+                    <h4>🧠 记忆系统的价值</h4>
+                    <ul>
+                        <li><strong>个性化服务：</strong>基于历史交互提供定制化体验</li>
+                        <li><strong>智能推荐：</strong>根据使用模式推荐相关服务</li>
+                        <li><strong>持续优化：</strong>从历史案例中学习改进</li>
+                        <li><strong>快速响应：</strong>缓存常用查询结果</li>
+                    </ul>
+                </div>
+            </section>
+            <!-- 实施计划 -->
+            <section id="implementation">
+                <h2>7. 48小时冲刺计划</h2>
+                <div class="grid">
+                    <div class="card">
+                        <h4>📅 Day 1 - 基础搭建</h4>
+                        <p><strong>上午 (4小时)</strong></p>
+                        <ul>
+                            <li>✅ 环境配置：Chainlit + CrewAI</li>
+                            <li>✅ 基础UI：对话界面搭建</li>
+                            <li>✅ LLM集成：GPT-4 API配置</li>
+                        </ul>
+                        <p><strong>下午 (4小时)</strong></p>
+                        <ul>
+                            <li>✅ 智能体实现：Intent Analyst</li>
+                            <li>✅ RAG系统：Chroma + LlamaIndex</li>
+                            <li>✅ Flow 1：现有服务调用完成</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>📅 Day 2 - 核心功能</h4>
+                        <p><strong>上午 (4小时)</strong></p>
+                        <ul>
+                            <li>⏳ Group Chat：多轮对话实现</li>
+                            <li>⏳ SIPOC生成器：文档自动化</li>
+                            <li>⏳ 流程可视化：图表生成</li>
+                        </ul>
+                        <p><strong>下午 (4小时)</strong></p>
+                        <ul>
+                            <li>⏳ 服务生成：Mock代码创建</li>
+                            <li>⏳ Flow 2：完整流程测试</li>
+                            <li>⏳ 演示准备：场景优化</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="warning-box">
+                    <h4>⚠️ 风险管理</h4>
+                    <ul>
+                        <li><strong>时间风险：</strong>仅48小时开发时间，需严格控制范围</li>
+                        <li><strong>技术风险：</strong>多框架集成可能存在兼容性问题</li>
+                        <li><strong>演示风险：</strong>Mock服务需要足够真实以展示价值</li>
+                    </ul>
+                </div>
+                <div class="success-box">
+                    <h4>🎯 成功标准</h4>
+                    <ul>
+                        <li>✅ 完成两个端到端业务场景演示</li>
+                        <li>✅ 实现自然语言到服务调用的全流程</li>
+                        <li>✅ SIPOC文档自动生成并可视化</li>
+                        <li>✅ 展示AI自动生成新服务的能力</li>
+                        <li>✅ 用户体验流畅，响应时间 < 3秒</li>
+                    </ul>
+                </div>
+            </section>
+            <!-- 总结 -->
+            <section>
+                <h2>8. 项目亮点与创新</h2>
+                <div class="grid">
+                    <div class="card">
+                        <h4>🌟 技术创新</h4>
+                        <ul>
+                            <li>多智能体协作架构</li>
+                            <li>RAG增强的服务发现</li>
+                            <li>四层记忆系统设计</li>
+                            <li>自动化服务生成</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>💼 业务价值</h4>
+                        <ul>
+                            <li>降低操作门槛</li>
+                            <li>提升处理效率</li>
+                            <li>减少人为错误</li>
+                            <li>加速创新迭代</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>🚀 未来展望</h4>
+                        <ul>
+                            <li>扩展更多业务场景</li>
+                            <li>接入真实托管系统</li>
+                            <li>增强合规性检查</li>
+                            <li>支持多语言交互</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="info-box" style="margin-top: 30px; text-align: center;">
+                    <h4>🏆 核心竞争力</h4>
+                    <p style="font-size: 1.1em; margin-top: 10px;">
+                        <strong>"让每个业务人员都能成为流程自动化专家"</strong><br>
+                        通过AI赋能，实现从自然语言到自动化执行的无缝转换
+                    </p>
+                </div>
+            </section>
+        </div>
+    </div>
+</body>
+</html>

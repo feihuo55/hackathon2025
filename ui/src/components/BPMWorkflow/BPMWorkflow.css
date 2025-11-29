@@ -1,0 +1,362 @@
+/* BPM Workflow Diagram Styles - BPMN 2.0 */
+
+/* Main Container */
+.bpm-workflow-container {
+  background: white;
+  border: 4px solid #ef4444; /* RED border for debugging - REMOVE LATER */
+  border-radius: 16px;
+  margin: 16px 0;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  min-height: 400px; /* Ensure minimum height */
+}
+
+/* Header */
+.bpm-workflow-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+}
+
+.bpm-workflow-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.bpm-workflow-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Pool */
+.bpm-pool {
+  border: 2px solid #334155;
+  margin: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.bpm-pool-header {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Swimlane */
+.bpm-swimlane {
+  display: flex;
+  min-height: 150px;
+}
+
+.bpm-swimlane-header {
+  width: 100px;
+  min-width: 100px;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-right: 2px solid #cbd5e1;
+  padding: 16px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+}
+
+.bpm-swimlane-role {
+  font-weight: 600;
+  font-size: 12px;
+  color: #1e293b;
+  text-align: center;
+}
+
+/* Flow */
+.bpm-flow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  gap: 4px;
+  background: #fafbfc;
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+
+.bpm-flow-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Node Container */
+.bpm-node-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.bpm-node-sublabel {
+  font-size: 10px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+/* Events (Start/End) */
+.bpm-event {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bpm-start-event {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border: 3px solid #15803d;
+}
+
+.bpm-end-event {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: 3px solid #b91c1c;
+}
+
+/* Task */
+.bpm-task {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  min-width: 100px;
+  max-width: 180px;
+}
+
+.bpm-task-icon {
+  color: #2563eb;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bpm-task-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.bpm-task-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #1e40af;
+  line-height: 1.3;
+  display: block;
+}
+
+/* Gateway */
+.bpm-gateway {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  transform: rotate(45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bpm-gateway span {
+  transform: rotate(-45deg);
+  font-weight: 700;
+  font-size: 14px;
+  color: #b45309;
+}
+
+/* Connectors */
+.bpm-connector {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.bpm-connector-horizontal {
+  flex-direction: row;
+}
+
+.bpm-connector-vertical {
+  flex-direction: column;
+}
+
+.bpm-connector-line {
+  width: 24px;
+  height: 2px;
+  background: #94a3b8;
+}
+
+.bpm-connector-line-v {
+  width: 2px;
+  height: 24px;
+  background: #94a3b8;
+}
+
+.bpm-connector-arrow {
+  color: #64748b;
+}
+
+/* SIPOC Summary */
+.bpm-sipoc-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: #e2e8f0;
+  border-top: 2px solid #e2e8f0;
+}
+
+.bpm-sipoc-section {
+  background: white;
+  padding: 12px;
+}
+
+.bpm-sipoc-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6366f1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #e0e7ff;
+}
+
+.bpm-sipoc-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bpm-sipoc-item {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: block;
+}
+
+.bpm-sipoc-item.supplier {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.bpm-sipoc-item.input {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.bpm-sipoc-item.output {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.bpm-sipoc-item.customer {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+/* Legend */
+.bpm-legend {
+  display: flex;
+  gap: 24px;
+  padding: 16px 20px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.bpm-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.bpm-legend-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.bpm-legend-start {
+  background: #22c55e;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+}
+
+.bpm-legend-end {
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+}
+
+.bpm-legend-task {
+  background: #dbeafe;
+  border: 1px solid #3b82f6;
+  border-radius: 4px;
+}
+
+.bpm-legend-gateway {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  transform: rotate(45deg);
+  width: 14px;
+  height: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .bpm-flow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .bpm-flow-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .bpm-connector-horizontal {
+    transform: rotate(90deg);
+    margin: 8px 0;
+  }
+
+  .bpm-sipoc-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bpm-legend {
+    gap: 12px;
+  }
+}

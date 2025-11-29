@@ -66,6 +66,8 @@ class ExecutorAgent(BaseAgent):
             message = self._format_fund_list(data, lang)
         elif service_id == "processDividend":
             message = self._format_dividend_processing(data, lang)
+        elif service_id == "getFundPerformance":
+            message = self._format_performance_result(data, lang)
         else:
             message = get_message('service_success', lang, data=str(data))
 
@@ -138,6 +140,43 @@ class ExecutorAgent(BaseAgent):
                 lines.append(
                     f"| {d['name']} | {currency}{d['total_amount']:,.2f} | {d['method']} | {d['status']} |"
                 )
+
+        return "\n".join(lines)
+
+    def _format_performance_result(self, data: dict, lang: str = "en") -> str:
+        """Format fund performance result"""
+        ytd_emoji = "📈" if data.get("ytd_return", 0) >= 0 else "📉"
+        one_year_emoji = "📈" if data.get("one_year_return", 0) >= 0 else "📉"
+
+        header = f"**Fund Performance: {data.get('name', 'Unknown')} ({data.get('code', '')})**" if lang == 'en' else f"**基金业绩: {data.get('name', 'Unknown')} ({data.get('code', '')})**"
+
+        benchmark = data.get("benchmark_comparison", {})
+        risk = data.get("risk_metrics", {})
+
+        return_label = "Returns" if lang == 'en' else "收益率"
+        benchmark_label = "Benchmark Comparison" if lang == 'en' else "基准比较"
+        risk_label = "Risk Metrics" if lang == 'en' else "风险指标"
+
+        lines = [
+            header,
+            "",
+            f"**{return_label}**",
+            f"| Metric | Value |",
+            f"|--------|-------|",
+            f"| YTD Return | {ytd_emoji} {data.get('ytd_return', 'N/A')}% |",
+            f"| 1-Year Return | {one_year_emoji} {data.get('one_year_return', 'N/A')}% |",
+            f"| 3-Year Return | {data.get('three_year_return', 'N/A')}% |",
+            "",
+            f"**{benchmark_label}**",
+            f"- Benchmark: {benchmark.get('benchmark', 'N/A')}",
+            f"- Benchmark Return: {benchmark.get('benchmark_return', 'N/A')}%",
+            f"- Excess Return: {benchmark.get('excess_return', 'N/A')}%",
+            "",
+            f"**{risk_label}**",
+            f"- Volatility: {risk.get('volatility', 'N/A')}%",
+            f"- Sharpe Ratio: {risk.get('sharpe_ratio', 'N/A')}",
+            f"- Max Drawdown: {risk.get('max_drawdown', 'N/A')}%",
+        ]
 
         return "\n".join(lines)
 
