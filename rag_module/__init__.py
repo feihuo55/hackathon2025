@@ -1,5 +1,6 @@
 # RAG Module - 检索增强生成模块
 # 托管银行AI自动化平台的核心RAG能力
+# V2: 增加用户反馈闭环学习系统
 
 # 延迟导入以支持chromadb不可用的情况
 def _lazy_import():
@@ -26,6 +27,7 @@ from .indexing.embeddings import EmbeddingService, TextPreprocessor, embedding_s
 
 from .retrieval.service_matcher import ServiceMatcher
 
+# 记忆系统（含反馈记忆）
 from .memory import (
     MemoryManager,
     EpisodicMemory,
@@ -34,8 +36,36 @@ from .memory import (
     Procedure,
     SummaryMemory,
     Summary,
+    FeedbackMemory,
+    Feedback,
+    FeedbackType,
+    FeedbackSource,
     MemoryPersistence,
     get_persistence,
+)
+
+# 反馈收集模块
+from .feedback import (
+    FeedbackCollector,
+    get_feedback_collector,
+    collect_thumbs_up,
+    collect_thumbs_down,
+    collect_correction,
+)
+
+# 学习模块
+from .learning import (
+    RelevanceLearner,
+    get_relevance_learner,
+    KnowledgeRefiner,
+    get_knowledge_refiner,
+)
+
+# 反馈重排序
+from .retrieval.feedback_reranker import (
+    FeedbackReranker,
+    get_feedback_reranker,
+    rerank_with_feedback,
 )
 
 from .utils import (
@@ -91,6 +121,9 @@ __all__ = [
     'KnowledgeSearch',
     'SearchResult',
     'knowledge_search',
+    'FeedbackReranker',
+    'get_feedback_reranker',
+    'rerank_with_feedback',
 
     # 记忆
     'MemoryManager',
@@ -100,8 +133,25 @@ __all__ = [
     'Procedure',
     'SummaryMemory',
     'Summary',
+    'FeedbackMemory',
+    'Feedback',
+    'FeedbackType',
+    'FeedbackSource',
     'MemoryPersistence',
     'get_persistence',
+
+    # 反馈收集
+    'FeedbackCollector',
+    'get_feedback_collector',
+    'collect_thumbs_up',
+    'collect_thumbs_down',
+    'collect_correction',
+
+    # 学习
+    'RelevanceLearner',
+    'get_relevance_learner',
+    'KnowledgeRefiner',
+    'get_knowledge_refiner',
 
     # 工具
     'RetryConfig',

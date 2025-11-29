@@ -1,5 +1,11 @@
-# Retrieval - 检索服务模块
+# Retrieval - 检索服务模块（含反馈重排序）
 from .service_matcher import ServiceMatcher
+from .feedback_reranker import (
+    FeedbackReranker,
+    RerankedResult,
+    get_feedback_reranker,
+    rerank_with_feedback,
+)
 
 # 延迟导入依赖chromadb的模块
 KnowledgeSearch = None
@@ -26,4 +32,8 @@ __all__ = [
     'KnowledgeSearch',
     'SearchResult',
     'knowledge_search',
+    'FeedbackReranker',
+    'RerankedResult',
+    'get_feedback_reranker',
+    'rerank_with_feedback',
 ]
